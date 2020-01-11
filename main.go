@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/rknizzle/serverless-learning/api"
 	"io"
 	"log"
 	"os"
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	fmt.Println("Building a container...")
-	directoryName := "nodejs-example"
+	directoryName := "test/nodejs-example"
 	tagName := "rkneills/nodeexample"
 	// build container
 	err = buildImage(*cli, directoryName, tagName)
@@ -65,6 +66,8 @@ func main() {
 	// list containers
 	fmt.Println("Listing running containers if any...")
 	listContainers(*cli)
+
+	api.Init()
 }
 
 // Lists all running Docker containers on the system
