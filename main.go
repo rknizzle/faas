@@ -46,6 +46,13 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("Pulling the image...")
+	// pull
+	err = pullImage(*cli, tagName)
+	if err != nil {
+		panic(err)
+	}
+
 	// list containers
 	fmt.Println("Listing running containers if any...")
 	listContainers(*cli)
@@ -136,4 +143,16 @@ func generateAuth() (string, error) {
 	}
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 	return authStr, nil
+}
+
+// Pull an image from a remote repository
+func pullImage(cli client.Client, imageName string) error {
+	ctx := context.Background()
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	io.Copy(os.Stdout, out)
+	return nil
 }
