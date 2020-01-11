@@ -3,12 +3,15 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"io"
 	"log"
+	"os"
 	"time"
 )
 
@@ -25,6 +28,20 @@ func main() {
 	tagName := "rkneills/nodeexample"
 	// build container
 	err = buildImage(*cli, directoryName, tagName)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Generating DockerHub credentials...")
+	// get dockerhub credentials
+	auth, err := generateAuth()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Pushing the image...")
+	// push
+	err = pushImage(*cli, tagName, auth)
 	if err != nil {
 		panic(err)
 	}
@@ -90,4 +107,33 @@ func writeToLog(reader io.ReadCloser) error {
 		log.Println(string(n))
 	}
 	return nil
+}
+
+// Push an image to remote repository
+func pushImage(cli client.Client, image string, authString string) error {
+	ctx := context.Background()
+	fmt.Println("Going to push " + image)
+	out, err := cli.ImagePush(ctx, image, types.ImagePushOptions{
+		RegistryAuth: authString,
+	})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	io.Copy(os.Stdout, out)
+	return nil
+}
+
+// Generate the dockerhub credentials from ENV variables
+func generateAuth() (string, error) {
+	authConfig := types.AuthConfig{
+		Username: os.Getenv("DOCKER_USERNAME"),
+		Password: os.Getenv("DOCKER_PASSWORD"),
+	}
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	return authStr, nil
 }
