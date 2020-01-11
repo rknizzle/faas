@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/stdcopy"
 	"io"
 	"log"
 	"os"
@@ -49,6 +51,13 @@ func main() {
 	fmt.Println("Pulling the image...")
 	// pull
 	err = pullImage(*cli, tagName)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Running the container...")
+	// run
+	runContainer(*cli, tagName)
 	if err != nil {
 		panic(err)
 	}
@@ -154,5 +163,41 @@ func pullImage(cli client.Client, imageName string) error {
 	}
 	defer out.Close()
 	io.Copy(os.Stdout, out)
+	return nil
+}
+
+// Create and start a container from a local image
+func runContainer(cli client.Client, imageName string) error {
+	ctx := context.Background()
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageName,
+		// if Cmd is left out it will run the command in the Dockerfile
+		//Cmd: []string{"node", "main.js"},
+	}, nil, nil, "")
+	if err != nil {
+		return err
+	}
+
+	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
+
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			panic(err)
+		}
+	case <-statusCh:
+	}
+
+	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		return err
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return nil
 }
