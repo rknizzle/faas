@@ -11,7 +11,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/rknizzle/serverless-learning/api"
+	"github.com/rknizzle/faas/api"
+	"github.com/rknizzle/faas/manager"
 	"io"
 	"log"
 	"os"
@@ -67,7 +68,8 @@ func main() {
 	fmt.Println("Listing running containers if any...")
 	listContainers(*cli)
 
-	api.Init()
+	m := manager.New()
+	api.Init(m)
 }
 
 // Lists all running Docker containers on the system

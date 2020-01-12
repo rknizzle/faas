@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/rknizzle/faas/manager"
 	"io"
 	"os"
 	"path/filepath"
@@ -18,10 +19,11 @@ type fnData struct {
 }
 
 func main() {
-	Init()
+	m := manager.New()
+	Init(m)
 }
 
-func Init() {
+func Init(m *manager.Manager) {
 	fmt.Println("Starting...")
 
 	r := gin.Default()
@@ -53,8 +55,10 @@ func Init() {
 		if err != nil {
 			panic(err)
 		}
+
+		dir := "tmp/" + data.Name
 		// name to be given to the zip file thats written to disk
-		zipFile := data.Name + ".zip"
+		zipFile := dir + ".zip"
 
 		output, err := os.Create(zipFile)
 		if err != nil {
@@ -67,12 +71,21 @@ func Init() {
 		io.Copy(output, decoder)
 
 		// unzip the input zip file to extract the directory containing the function code
-		files, err := Unzip(zipFile, data.Name)
+		files, err := Unzip(zipFile, dir)
 		if err != nil {
 			panic(err)
 		}
+		// remove the zip file now that the directory has been extracted
+		err = os.Remove(zipFile)
+		if err != nil {
+			fmt.Println("Failed to remove zip file]")
+		}
 		// print files in unzipped directory
 		fmt.Println(files)
+		// all images will be pushed to my personal Dockerhub registry for now
+		tag := "rkneills/" + data.Name
+
+		m.BuildImage(dir, tag)
 	})
 
 	// Listen and serve on localhost
