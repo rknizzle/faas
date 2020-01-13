@@ -86,6 +86,11 @@ func Init(m *manager.Manager) {
 		tag := "rkneills/" + data.Name
 
 		m.BuildImage(dir, tag)
+		m.PushImage(tag)
+
+		c.JSON(200, gin.H{
+			"invoke": c.Request.Host + "/functions/" + tag,
+		})
 	})
 
 	// Listen and serve on localhost

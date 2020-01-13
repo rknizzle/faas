@@ -2,6 +2,9 @@ package manager
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -12,7 +15,8 @@ import (
 )
 
 type Manager struct {
-	cli *client.Client
+	cli  *client.Client
+	auth string
 }
 
 func New() *Manager {
@@ -20,7 +24,12 @@ func New() *Manager {
 	if err != nil {
 		panic(err)
 	}
-	return &Manager{cli}
+	auth, err := generateAuth()
+	if err != nil {
+		panic(err)
+	}
+
+	return &Manager{cli, auth}
 }
 
 // Builds a Docker image
@@ -49,4 +58,40 @@ func (m Manager) BuildImage(directory string, tag string) error {
 	}
 	io.Copy(os.Stdout, resp.Body)
 	return nil
+}
+
+// Push an image to remote repository
+func (m Manager) PushImage(image string) error {
+	ctx := context.Background()
+	fmt.Println("Going to push " + image)
+	out, err := m.cli.ImagePush(ctx, image, types.ImagePushOptions{
+		RegistryAuth: m.auth,
+	})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	io.Copy(os.Stdout, out)
+	return nil
+}
+
+// Generate the dockerhub credentials from ENV variables
+func generateAuth() (string, error) {
+	username := os.Getenv("DOCKER_USERNAME")
+	password := os.Getenv("DOCKER_PASSWORD")
+
+	if username == "" || password == "" {
+		return "", errors.New("Missing Dockerhub username or password")
+	}
+
+	authConfig := types.AuthConfig{
+		Username: username,
+		Password: password,
+	}
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	return authStr, nil
 }
