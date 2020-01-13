@@ -97,10 +97,12 @@ func Init(m *manager.Manager) {
 	r.POST("/functions/:repo/:fn", func(c *gin.Context) {
 		repo := c.Param("repo")
 		fn := c.Param("fn")
-		m.PullImage(repo + "/" + fn)
+		image := repo + "/" + fn
+		m.PullImage(image)
+		m.RunContainer(image)
 
 		c.JSON(200, gin.H{
-			"message": "pong",
+			"success": "true",
 		})
 	})
 
