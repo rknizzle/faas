@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/stdcopy"
 	"io"
 	"os"
 	"time"
@@ -105,5 +107,41 @@ func (m *Manager) PullImage(name string) error {
 	}
 	defer out.Close()
 	io.Copy(os.Stdout, out)
+	return nil
+}
+
+// Create and start a container from a local image
+func (m *Manager) RunContainer(image string) error {
+	ctx := context.Background()
+
+	resp, err := m.cli.ContainerCreate(ctx, &container.Config{
+		Image: image,
+		// if Cmd is left out it will run the command in the Dockerfile
+		//Cmd: []string{"node", "main.js"},
+	}, nil, nil, "")
+	if err != nil {
+		return err
+	}
+
+	err = m.cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
+
+	statusCh, errCh := m.cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			panic(err)
+		}
+	case <-statusCh:
+	}
+
+	out, err := m.cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		return err
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return nil
 }
