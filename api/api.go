@@ -93,6 +93,17 @@ func Init(m *manager.Manager) {
 		})
 	})
 
+	// function invocation
+	r.POST("/functions/:repo/:fn", func(c *gin.Context) {
+		repo := c.Param("repo")
+		fn := c.Param("fn")
+		m.PullImage(repo + "/" + fn)
+
+		c.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
+
 	// Listen and serve on localhost
 	r.Run()
 }
