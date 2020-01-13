@@ -95,3 +95,15 @@ func generateAuth() (string, error) {
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 	return authStr, nil
 }
+
+// Pull an image from a remote repository
+func (m *Manager) PullImage(name string) error {
+	ctx := context.Background()
+	out, err := m.cli.ImagePull(ctx, name, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	io.Copy(os.Stdout, out)
+	return nil
+}
