@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-type fnData struct {
+type FnData struct {
 	File string `json:"file"`
 	Name string `json:"name"`
 }
@@ -43,7 +43,7 @@ func Init(m *manager.Manager) {
 			panic(err)
 		}
 
-		var data fnData
+		var data FnData
 		err = json.Unmarshal(rawData, &data)
 		if err != nil {
 			panic(err)
