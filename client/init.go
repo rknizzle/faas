@@ -9,6 +9,10 @@ func Init() error {
 	if err != nil {
 		return err
 	}
+	err = writePackageFile()
+	if err != nil {
+		return err
+	}
 	err = writeDockerfile()
 	if err != nil {
 		return err
@@ -26,6 +30,28 @@ func writeIndexFile() error {
 }`
 
 	err := ioutil.WriteFile("index.js", []byte(indexContents), 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func writePackageFile() error {
+	packageContents := `
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}`
+
+	err := ioutil.WriteFile("package.json", []byte(packageContents), 0755)
 	if err != nil {
 		return err
 	}
