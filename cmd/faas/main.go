@@ -27,7 +27,7 @@ func main() {
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
-		fmt.Println("invokeName:", invokeName)
+		fmt.Println("invoke name:", invokeName)
 	} else if subcommand == "invoke" {
 		err := client.Invoke(os.Args[2])
 		if err != nil {
