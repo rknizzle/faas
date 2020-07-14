@@ -29,7 +29,10 @@ func main() {
 		}
 		fmt.Println("invokeName:", invokeName)
 	} else if subcommand == "invoke" {
-		//client.Invoke()
+		err := client.Invoke(os.Args[2])
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
 	} else if subcommand == "-h" {
 		helpInfo()
 	} else {
