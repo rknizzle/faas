@@ -9,7 +9,8 @@ import (
 
 func main() {
 	if len(os.Args) <= 1 {
-		log.Fatalf("No arguments included")
+		helpInfo()
+		return
 	}
 
 	subcommand := os.Args[1]
@@ -35,11 +36,17 @@ func main() {
 		}
 	} else if subcommand == "-h" {
 		helpInfo()
+	} else if subcommand == "--help" {
+		helpInfo()
 	} else {
 		helpInfo()
 	}
 }
 
 func helpInfo() {
-	fmt.Println("HELP INFO HERE")
+	fmt.Println("usage: faas <command>")
+	fmt.Println("commands:")
+	fmt.Println("  init")
+	fmt.Println("  build")
+	fmt.Println("  invoke <function>")
 }
