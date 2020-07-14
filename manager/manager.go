@@ -116,7 +116,7 @@ func (m *Manager) RunContainer(image string) error {
 
 	resp, err := m.cli.ContainerCreate(ctx, &container.Config{
 		Image: image,
-		// if Cmd is left out it will run the command in the Dockerfile
+		// if Cmd is left out it will run the command specified in the Dockerfile
 		//Cmd: []string{"node", "main.js"},
 	}, nil, nil, "")
 	if err != nil {
