@@ -19,7 +19,15 @@ func main() {
 			log.Fatalf(err.Error())
 		}
 	} else if subcommand == "build" {
-		//client.Build()
+		// verify that there is a fn.yaml file
+		if _, err := os.Stat("fn.yaml"); os.IsNotExist(err) {
+			log.Fatalf("Not a proper directory")
+		}
+		invokeName, err := client.Build()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		fmt.Println("invokeName:", invokeName)
 	} else if subcommand == "invoke" {
 		//client.Invoke()
 	} else if subcommand == "-h" {
