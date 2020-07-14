@@ -18,7 +18,7 @@ type FnData struct {
 	Name string `json:"name"`
 }
 
-func main() {
+func Start() {
 	m := manager.New()
 	Init(m)
 }
