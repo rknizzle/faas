@@ -36,7 +36,6 @@ func Init(m *manager.Manager) {
 
 	// add a new function
 	r.POST("/functions", func(c *gin.Context) {
-
 		// get function data from request body
 		rawData, err := c.GetRawData()
 		if err != nil {
@@ -56,8 +55,9 @@ func Init(m *manager.Manager) {
 			panic(err)
 		}
 
-		os.Mkdir("tmp", 0755)
+		fmt.Println("Creating function...")
 
+		os.Mkdir("tmp", 0755)
 		dir := "tmp/" + data.Name
 		// name to be given to the zip file thats written to disk
 		zipFile := dir + ".zip"
@@ -73,7 +73,7 @@ func Init(m *manager.Manager) {
 		io.Copy(output, decoder)
 
 		// unzip the input zip file to extract the directory containing the function code
-		files, err := Unzip(zipFile, dir)
+		_, err = Unzip(zipFile, dir)
 		if err != nil {
 			panic(err)
 		}
@@ -82,8 +82,6 @@ func Init(m *manager.Manager) {
 		if err != nil {
 			fmt.Println("Failed to remove zip file")
 		}
-		// print files in unzipped directory
-		fmt.Println(files)
 
 		tag := data.Name
 		m.BuildImage(dir, tag)
@@ -98,6 +96,7 @@ func Init(m *manager.Manager) {
 	// function invocation
 	r.POST("/functions/:fn", func(c *gin.Context) {
 		fn := c.Param("fn")
+		fmt.Println("Executing function: " + fn)
 		m.RunContainer(fn)
 
 		c.JSON(200, gin.H{
