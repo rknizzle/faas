@@ -72,7 +72,6 @@ func Init(m *manager.Manager) {
 		// write decoded data to zip file
 		io.Copy(output, decoder)
 
-		fmt.Println("about to unzip files")
 		// unzip the input zip file to extract the directory containing the function code
 		files, err := Unzip(zipFile, dir)
 		if err != nil {
