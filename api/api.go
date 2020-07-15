@@ -13,12 +13,12 @@ import (
 	"strings"
 )
 
-type fnData struct {
+type FnData struct {
 	File string `json:"file"`
 	Name string `json:"name"`
 }
 
-func main() {
+func Start() {
 	m := manager.New()
 	Init(m)
 }
@@ -43,7 +43,7 @@ func Init(m *manager.Manager) {
 			panic(err)
 		}
 
-		var data fnData
+		var data FnData
 		err = json.Unmarshal(rawData, &data)
 		if err != nil {
 			panic(err)
@@ -55,6 +55,8 @@ func Init(m *manager.Manager) {
 		if err != nil {
 			panic(err)
 		}
+
+		os.Mkdir("tmp", 0755)
 
 		dir := "tmp/" + data.Name
 		// name to be given to the zip file thats written to disk
@@ -78,7 +80,7 @@ func Init(m *manager.Manager) {
 		// remove the zip file now that the directory has been extracted
 		err = os.Remove(zipFile)
 		if err != nil {
-			fmt.Println("Failed to remove zip file]")
+			fmt.Println("Failed to remove zip file")
 		}
 		// print files in unzipped directory
 		fmt.Println(files)
@@ -88,6 +90,8 @@ func Init(m *manager.Manager) {
 		m.BuildImage(dir, tag)
 		m.PushImage(tag)
 
+		// remove temporary directory used to build the image
+		os.RemoveAll("tmp/")
 		c.JSON(200, gin.H{
 			"invoke": c.Request.Host + "/functions/" + tag,
 		})
