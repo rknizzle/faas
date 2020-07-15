@@ -60,7 +60,7 @@ func main() {
 func helpInfo() {
 	fmt.Println("usage: faas <command>")
 	fmt.Println("commands:")
-	fmt.Println("  init")
+	fmt.Println("  init (only nodejs functions currently supported)")
 	fmt.Println("  build")
 	fmt.Println("  invoke <function>")
 }
