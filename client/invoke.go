@@ -10,7 +10,7 @@ func Invoke(function string) error {
 	// send HTTP request to server to invoke function AKA spin
 	// up new docker container and run the code
 	client := &http.Client{}
-	r, err := http.NewRequest("POST", "http://localhost:5555/functions/rkneills/"+function, nil)
+	r, err := http.NewRequest("POST", "http://localhost:5555/functions/"+function, nil)
 	if err != nil {
 		return err
 	}
