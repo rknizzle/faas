@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	"io"
+	"io/ioutil"
 	"os"
 	"time"
 )
@@ -58,7 +59,12 @@ func (m Manager) BuildImage(directory string, tag string) error {
 		fmt.Println(err, " :unable to build docker image")
 		return err
 	}
-	io.Copy(os.Stdout, resp.Body)
+
+	// block until the image is finished building
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
