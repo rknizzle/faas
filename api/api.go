@@ -56,6 +56,8 @@ func Init(m *manager.Manager) {
 			panic(err)
 		}
 
+		os.Mkdir("tmp", 0755)
+
 		dir := "tmp/" + data.Name
 		// name to be given to the zip file thats written to disk
 		zipFile := dir + ".zip"
@@ -70,6 +72,7 @@ func Init(m *manager.Manager) {
 		// write decoded data to zip file
 		io.Copy(output, decoder)
 
+		fmt.Println("about to unzip files")
 		// unzip the input zip file to extract the directory containing the function code
 		files, err := Unzip(zipFile, dir)
 		if err != nil {
@@ -78,7 +81,7 @@ func Init(m *manager.Manager) {
 		// remove the zip file now that the directory has been extracted
 		err = os.Remove(zipFile)
 		if err != nil {
-			fmt.Println("Failed to remove zip file]")
+			fmt.Println("Failed to remove zip file")
 		}
 		// print files in unzipped directory
 		fmt.Println(files)
@@ -88,6 +91,8 @@ func Init(m *manager.Manager) {
 		m.BuildImage(dir, tag)
 		m.PushImage(tag)
 
+		// remove temporary directory used to build the image
+		os.RemoveAll("tmp/")
 		c.JSON(200, gin.H{
 			"invoke": c.Request.Host + "/functions/" + tag,
 		})
