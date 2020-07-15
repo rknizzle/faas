@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/rknizzle/faas/api"
 	"github.com/rknizzle/faas/client"
 	"log"
 	"os"
@@ -44,6 +45,9 @@ func main() {
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
+	} else if subcommand == "start" {
+		// start the server
+		api.Start()
 	} else if subcommand == "-h" {
 		helpInfo()
 	} else if subcommand == "--help" {
