@@ -84,11 +84,9 @@ func Init(m *manager.Manager) {
 		}
 		// print files in unzipped directory
 		fmt.Println(files)
-		// all images will be pushed to my personal Dockerhub registry for now
-		tag := "rkneills/" + data.Name
 
+		tag := data.Name
 		m.BuildImage(dir, tag)
-		m.PushImage(tag)
 
 		// remove temporary directory used to build the image
 		os.RemoveAll("tmp/")
@@ -98,12 +96,9 @@ func Init(m *manager.Manager) {
 	})
 
 	// function invocation
-	r.POST("/functions/:repo/:fn", func(c *gin.Context) {
-		repo := c.Param("repo")
+	r.POST("/functions/:fn", func(c *gin.Context) {
 		fn := c.Param("fn")
-		image := repo + "/" + fn
-		m.PullImage(image)
-		m.RunContainer(image)
+		m.RunContainer(fn)
 
 		c.JSON(200, gin.H{
 			"success": "true",
