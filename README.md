@@ -7,9 +7,7 @@ A simple Functions-as-a-Service(FaaS) platform using Docker containers for the p
 Must have Docker daemon installed and running 
 
 ### Install CLI tool
-```
-go get -u github.com/rknizzle/faas/cmd/faas
-```
+Releases for OSX and Linux can be found [here](https://github.com/rknizzle/faas/releases)
 
 ### Local demo:
 
