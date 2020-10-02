@@ -18,11 +18,6 @@ type FnData struct {
 	Name string `json:"name"`
 }
 
-func Start() {
-	m := manager.New()
-	Init(m)
-}
-
 func Init(m *manager.Manager) {
 	fmt.Println("Starting...")
 
