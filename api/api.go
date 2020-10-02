@@ -18,10 +18,9 @@ type FnData struct {
 	Name string `json:"name"`
 }
 
-func Init(m *manager.Manager) {
-	fmt.Println("Starting...")
-
+func Start() {
 	r := gin.Default()
+	m := manager.New()
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
