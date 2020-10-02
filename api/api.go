@@ -18,15 +18,17 @@ type FnData struct {
 	Name string `json:"name"`
 }
 
+func ping(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "pong",
+	})
+}
+
 func Start() {
 	r := gin.Default()
 	m := manager.New()
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	r.GET("/ping", ping)
 
 	// add a new function
 	r.POST("/functions", func(c *gin.Context) {
