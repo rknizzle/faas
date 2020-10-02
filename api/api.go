@@ -49,16 +49,24 @@ func invokeHandler(m *manager.Manager) gin.HandlerFunc {
 	})
 }
 
+func fnDataFromReq(c *gin.Context) (FnData, error) {
+	rawData, err := c.GetRawData()
+	if err != nil {
+		return FnData{}, err
+	}
+
+	var fnData FnData
+	err = json.Unmarshal(rawData, &fnData)
+	if err != nil {
+		return FnData{}, err
+	}
+	return fnData, nil
+}
+
 func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		// get function data from request body
-		rawData, err := c.GetRawData()
-		if err != nil {
-			panic(err)
-		}
 
-		var data FnData
-		err = json.Unmarshal(rawData, &data)
+		data, err := fnDataFromReq(c)
 		if err != nil {
 			panic(err)
 		}
