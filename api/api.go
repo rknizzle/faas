@@ -24,6 +24,18 @@ func ping(c *gin.Context) {
 	})
 }
 
+func invokeHandler(m *manager.Manager) gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		fn := c.Param("fn")
+		fmt.Println("Executing function: " + fn)
+		m.RunContainer(fn)
+
+		c.JSON(200, gin.H{
+			"success": "true",
+		})
+	})
+}
+
 func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
 		// get function data from request body
@@ -91,17 +103,7 @@ func Start() {
 	r.GET("/ping", ping)
 
 	r.POST("/functions", addFunctionHandler(m))
-
-	// function invocation
-	r.POST("/functions/:fn", func(c *gin.Context) {
-		fn := c.Param("fn")
-		fmt.Println("Executing function: " + fn)
-		m.RunContainer(fn)
-
-		c.JSON(200, gin.H{
-			"success": "true",
-		})
-	})
+	r.POST("/functions/:fn", invokeHandler(m))
 
 	// Listen and serve on localhost
 	r.Run()
