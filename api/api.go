@@ -18,6 +18,19 @@ type FnData struct {
 	Name string `json:"name"`
 }
 
+func Start() {
+	r := gin.Default()
+	m := manager.New()
+
+	r.GET("/ping", ping)
+
+	r.POST("/functions", addFunctionHandler(m))
+	r.POST("/functions/:fn", invokeHandler(m))
+
+	// Listen and serve on localhost
+	r.Run()
+}
+
 func ping(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",
@@ -94,19 +107,6 @@ func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
 			"invoke": c.Request.Host + "/functions/" + tag,
 		})
 	})
-}
-
-func Start() {
-	r := gin.Default()
-	m := manager.New()
-
-	r.GET("/ping", ping)
-
-	r.POST("/functions", addFunctionHandler(m))
-	r.POST("/functions/:fn", invokeHandler(m))
-
-	// Listen and serve on localhost
-	r.Run()
 }
 
 // Function found at https://golangcode.com/unzip-files-in-go/ (MIT License)
