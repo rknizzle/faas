@@ -24,14 +24,8 @@ func ping(c *gin.Context) {
 	})
 }
 
-func Start() {
-	r := gin.Default()
-	m := manager.New()
-
-	r.GET("/ping", ping)
-
-	// add a new function
-	r.POST("/functions", func(c *gin.Context) {
+func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
 		// get function data from request body
 		rawData, err := c.GetRawData()
 		if err != nil {
@@ -88,6 +82,15 @@ func Start() {
 			"invoke": c.Request.Host + "/functions/" + tag,
 		})
 	})
+}
+
+func Start() {
+	r := gin.Default()
+	m := manager.New()
+
+	r.GET("/ping", ping)
+
+	r.POST("/functions", addFunctionHandler(m))
 
 	// function invocation
 	r.POST("/functions/:fn", func(c *gin.Context) {
