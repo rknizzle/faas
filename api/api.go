@@ -19,82 +19,26 @@ type FnData struct {
 }
 
 func Start() {
+	r := gin.Default()
 	m := manager.New()
-	Init(m)
+
+	r.GET("/ping", ping)
+
+	r.POST("/functions", addFunctionHandler(m))
+	r.POST("/functions/:fn", invokeHandler(m))
+
+	// Listen and serve on localhost
+	r.Run()
 }
 
-func Init(m *manager.Manager) {
-	fmt.Println("Starting...")
-
-	r := gin.Default()
-
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
+func ping(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "pong",
 	})
+}
 
-	// add a new function
-	r.POST("/functions", func(c *gin.Context) {
-		// get function data from request body
-		rawData, err := c.GetRawData()
-		if err != nil {
-			panic(err)
-		}
-
-		var data FnData
-		err = json.Unmarshal(rawData, &data)
-		if err != nil {
-			panic(err)
-		}
-
-		// the input "file" is expected to be base64 encoded
-		// decode the zip file
-		decoder := base64.NewDecoder(base64.StdEncoding, strings.NewReader(data.File))
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Creating function...")
-
-		os.Mkdir("tmp", 0755)
-		dir := "tmp/" + data.Name
-		// name to be given to the zip file thats written to disk
-		zipFile := dir + ".zip"
-
-		output, err := os.Create(zipFile)
-		if err != nil {
-			panic(err)
-		}
-		// Close output file
-		defer output.Close()
-
-		// write decoded data to zip file
-		io.Copy(output, decoder)
-
-		// unzip the input zip file to extract the directory containing the function code
-		_, err = Unzip(zipFile, dir)
-		if err != nil {
-			panic(err)
-		}
-		// remove the zip file now that the directory has been extracted
-		err = os.Remove(zipFile)
-		if err != nil {
-			fmt.Println("Failed to remove zip file")
-		}
-
-		tag := data.Name
-		m.BuildImage(dir, tag)
-
-		// remove temporary directory used to build the image
-		os.RemoveAll("tmp/")
-		c.JSON(200, gin.H{
-			"invoke": c.Request.Host + "/functions/" + tag,
-		})
-	})
-
-	// function invocation
-	r.POST("/functions/:fn", func(c *gin.Context) {
+func invokeHandler(m *manager.Manager) gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
 		fn := c.Param("fn")
 		fmt.Println("Executing function: " + fn)
 		m.RunContainer(fn)
@@ -103,9 +47,89 @@ func Init(m *manager.Manager) {
 			"success": "true",
 		})
 	})
+}
 
-	// Listen and serve on localhost
-	r.Run()
+func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+
+		data, err := fnDataFromReq(c)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+		}
+
+		fmt.Println("Creating function...")
+
+		dir, err := dirFromBase64Data(data.Name, data.File)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+		}
+
+		tag := data.Name
+		m.BuildImage(dir, tag)
+
+		// remove temporary directory used to build the image
+		os.RemoveAll(dir)
+
+		c.JSON(200, gin.H{
+			"invoke": c.Request.Host + "/functions/" + tag,
+		})
+	})
+}
+
+func fnDataFromReq(c *gin.Context) (FnData, error) {
+	rawData, err := c.GetRawData()
+	if err != nil {
+		return FnData{}, err
+	}
+
+	var fnData FnData
+	err = json.Unmarshal(rawData, &fnData)
+	if err != nil {
+		return FnData{}, err
+	}
+	return fnData, nil
+}
+
+func dirFromBase64Data(fnName string, base64Data string) (string, error) {
+	filename, err := writeDataToZip(fnName, base64Data)
+	if err != nil {
+		return "", err
+	}
+
+	// unzip the file into a directory called the function name
+	dir := fnName
+	_, err = Unzip(filename, dir)
+	if err != nil {
+		return "", err
+	}
+
+	// remove the zip file now that the directory has been extracted
+	err = os.Remove(filename)
+	if err != nil {
+		return "", err
+	}
+
+	return dir, nil
+}
+
+func writeDataToZip(fnName string, fnData string) (string, error) {
+	filename := fnName + ".zip"
+
+	zipFile, err := os.Create(filename)
+	if err != nil {
+		return "", err
+	}
+	defer zipFile.Close()
+
+	decoder := base64.NewDecoder(base64.StdEncoding, strings.NewReader(fnData))
+
+	// write decoded data to zip file
+	io.Copy(zipFile, decoder)
+	return filename, nil
 }
 
 // Function found at https://golangcode.com/unzip-files-in-go/ (MIT License)

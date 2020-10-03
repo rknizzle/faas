@@ -31,6 +31,9 @@ func Build() (string, error) {
 		fileList = append(fileList, f.Name())
 	}
 
+	// remove node_modules if it exists from list of files to send to server
+	fileList = remove(fileList, "node_modules")
+
 	// get the name of the current directory
 	name := filepath.Base(path)
 	output := name + ".zip"
@@ -143,4 +146,13 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	}
 	_, err = io.Copy(writer, fileToZip)
 	return err
+}
+
+func remove(l []string, item string) []string {
+	for i, other := range l {
+		if other == item {
+			return append(l[:i], l[i+1:]...)
+		}
+	}
+	return l
 }
