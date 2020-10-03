@@ -54,14 +54,18 @@ func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
 
 		data, err := fnDataFromReq(c)
 		if err != nil {
-			panic(err)
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
 		}
 
 		fmt.Println("Creating function...")
 
 		dir, err := dirFromBase64Data(data.Name, data.File)
 		if err != nil {
-			panic(err)
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
 		}
 
 		tag := data.Name
