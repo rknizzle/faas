@@ -162,3 +162,12 @@ func (m *Manager) RunContainer(image string) error {
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return nil
 }
+
+func (m *Manager) ContainerIP(ctx context.Context, id string) (string, error) {
+	co, err := m.cli.ContainerInspect(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return co.NetworkSettings.IPAddress, nil
+}
