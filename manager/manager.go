@@ -126,16 +126,7 @@ func (m *Manager) RunContainer(image string) error {
 		ExposedPorts: nat.PortSet{
 			"8080/tcp": struct{}{},
 		},
-		// if Cmd is left out it will run the command specified in the Dockerfile
-		//Cmd: []string{"node", "main.js"},
-	}, &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"8080/tcp": []nat.PortBinding{{
-				HostIP:   "0.0.0.0",
-				HostPort: "8080",
-			}},
-		},
-	}, nil, "")
+	}, nil, nil, "")
 	if err != nil {
 		return err
 	}
