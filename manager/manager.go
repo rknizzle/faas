@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-connections/nat"
 	"io"
 	"io/ioutil"
 	"os"
@@ -122,9 +123,19 @@ func (m *Manager) RunContainer(image string) error {
 
 	resp, err := m.cli.ContainerCreate(ctx, &container.Config{
 		Image: image,
+		ExposedPorts: nat.PortSet{
+			"8080/tcp": struct{}{},
+		},
 		// if Cmd is left out it will run the command specified in the Dockerfile
 		//Cmd: []string{"node", "main.js"},
-	}, nil, nil, "")
+	}, &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"8080/tcp": []nat.PortBinding{{
+				HostIP:   "0.0.0.0",
+				HostPort: "8080",
+			}},
+		},
+	}, nil, "")
 	if err != nil {
 		return err
 	}
