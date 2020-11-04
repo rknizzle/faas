@@ -8,6 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type FunctionRepo interface {
+	GetByName(context.Context, string) (function.Function, error)
+}
+
 // interacts with the functions database table
 type functionRepo struct {
 	Conn *sql.DB
