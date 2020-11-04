@@ -24,7 +24,7 @@ type DockerManager struct {
 }
 
 func NewDockerManager(registryUsername string, registryPassword string) (*DockerManager, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
 		return nil, err
 	}
