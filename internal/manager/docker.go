@@ -23,17 +23,18 @@ type DockerManager struct {
 	auth string
 }
 
-func New() *DockerManager {
+func NewDockerManager(registryUsername string, registryPassword string) (*DockerManager, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		panic(err)
-	}
-	auth, err := generateAuth()
-	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return &DockerManager{cli, auth}
+	auth, err := generateRegistryAuth(registryUsername, registryPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DockerManager{cli, auth}, nil
 }
 
 // Builds a Docker image
@@ -85,10 +86,7 @@ func (d DockerManager) PushImage(image string) error {
 }
 
 // Generate the dockerhub credentials from ENV variables
-func generateAuth() (string, error) {
-	username := os.Getenv("DOCKER_USERNAME")
-	password := os.Getenv("DOCKER_PASSWORD")
-
+func generateRegistryAuth(username string, password string) (string, error) {
 	if username == "" || password == "" {
 		return "", errors.New("Missing Dockerhub username or password")
 	}
