@@ -37,54 +37,6 @@ func NewDockerRunner(registryUsername string, registryPassword string) (*DockerR
 	return &DockerRunner{cli, auth}, nil
 }
 
-// Builds a Docker image
-func (d DockerRunner) BuildImage(directory string, tag string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300)*time.Second)
-	defer cancel()
-
-	// Get a tar file from directory
-	dockerfileTarReader, err := archive.TarWithOptions(directory, &archive.TarOptions{})
-	if err != nil {
-		return err
-	}
-
-	resp, err := d.cli.ImageBuild(
-		ctx,
-		dockerfileTarReader,
-		types.ImageBuildOptions{
-			Dockerfile: "Dockerfile",
-			Tags:       []string{tag},
-			NoCache:    true,
-			Remove:     true,
-		})
-	if err != nil {
-		fmt.Println(err, " :unable to build docker image")
-		return err
-	}
-
-	// block until the image is finished building
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Push an image to remote repository
-func (d DockerRunner) PushImage(image string) error {
-	ctx := context.Background()
-	fmt.Println("Going to push " + image)
-	out, err := d.cli.ImagePush(ctx, image, types.ImagePushOptions{
-		RegistryAuth: d.auth,
-	})
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	io.Copy(os.Stdout, out)
-	return nil
-}
-
 // Generate the dockerhub credentials from ENV variables
 func generateRegistryAuth(username string, password string) (string, error) {
 	if username == "" || password == "" {
