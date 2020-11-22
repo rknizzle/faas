@@ -12,12 +12,12 @@ import (
 	"time"
 )
 
-type DockerBuilder struct {
+type DockerDeployer struct {
 	cli  *client.Client
 	auth string
 }
 
-func NewDockerBuilder(registryUsername string, registryPassword string) (*DockerBuilder, error) {
+func NewDockerDeployer(registryUsername string, registryPassword string) (*DockerDeployer, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func NewDockerBuilder(registryUsername string, registryPassword string) (*Docker
 		return nil, err
 	}
 
-	return &DockerBuilder{cli, auth}, nil
+	return &DockerDeployer{cli, auth}, nil
 }
 
 // Generate the dockerhub credentials from ENV variables
@@ -50,7 +50,7 @@ func generateRegistryAuth(username string, password string) (string, error) {
 }
 
 // Builds a Docker image
-func (d DockerBuilder) BuildImage(directory string, tag string) error {
+func (d DockerDeployer) BuildImage(directory string, tag string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300)*time.Second)
 	defer cancel()
 
@@ -82,7 +82,7 @@ func (d DockerBuilder) BuildImage(directory string, tag string) error {
 }
 
 // Push an image to remote repository
-func (d DockerBuilder) PushImage(image string) error {
+func (d DockerDeployer) PushImage(image string) error {
 	ctx := context.Background()
 	out, err := d.cli.ImagePush(ctx, image, types.ImagePushOptions{
 		RegistryAuth: d.auth,
