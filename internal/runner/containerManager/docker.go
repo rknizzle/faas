@@ -5,17 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	"io"
-	"io/ioutil"
-	"os"
-	"time"
 )
 
 type DockerRunner struct {
@@ -63,7 +56,6 @@ func (d DockerRunner) PullImage(name string) error {
 		return err
 	}
 	defer out.Close()
-	io.Copy(os.Stdout, out)
 	return nil
 }
 
@@ -86,21 +78,6 @@ func (d *DockerRunner) RunContainer(image string) error {
 		return err
 	}
 
-	statusCh, errCh := d.cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			panic(err)
-		}
-	case <-statusCh:
-	}
-
-	out, err := d.cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		return err
-	}
-
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return nil
 }
 
