@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
+// DockerDeployer implements ContainerDeployer and uses the Docker SDK to build and push images
 type DockerDeployer struct {
 	cli  *client.Client
 	auth string
 }
 
+// NewDockerDeployer initializes a DockerDeployer with a Docker API version and credentials to access a Dockerhub registry
 func NewDockerDeployer(registryUsername string, registryPassword string) (*DockerDeployer, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
@@ -31,7 +33,8 @@ func NewDockerDeployer(registryUsername string, registryPassword string) (*Docke
 	return &DockerDeployer{cli, auth}, nil
 }
 
-// Generate the dockerhub credentials from ENV variables
+// generateRegistryAuth converts a Dockerhub username and password into an authentication string
+// used by the Docker SDK
 func generateRegistryAuth(username string, password string) (string, error) {
 	if username == "" || password == "" {
 		return "", errors.New("Missing Dockerhub username or password")
@@ -49,7 +52,7 @@ func generateRegistryAuth(username string, password string) (string, error) {
 	return authStr, nil
 }
 
-// Builds a Docker image
+// BuildImage converts a directory to a tar file and uses the Docker SDK to build a Docker image
 func (d DockerDeployer) BuildImage(directory string, tag string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300)*time.Second)
 	defer cancel()
@@ -81,7 +84,7 @@ func (d DockerDeployer) BuildImage(directory string, tag string) error {
 	return nil
 }
 
-// Push an image to remote repository
+// PushImage takes a local Docker image and pushes it to a Dockerhub registry
 func (d DockerDeployer) PushImage(image string) error {
 	ctx := context.Background()
 	out, err := d.cli.ImagePush(ctx, image, types.ImagePushOptions{
