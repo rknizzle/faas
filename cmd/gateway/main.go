@@ -1,9 +1,29 @@
 package main
 
 import (
-	"github.com/rknizzle/faas/internal/gateway/api"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	gw "github.com/rknizzle/faas/internal/gateway/api"
+	"github.com/rknizzle/faas/internal/gateway/deployer"
+	"os"
 )
 
 func main() {
-	api.Start()
+	uname := os.Getenv("DOCKER_USERNAME")
+	password := os.Getenv("DOCKER_PASSWORD")
+	if len(uname) == 0 || len(password) == 0 {
+		fmt.Println("Missing Docker username or password")
+		os.Exit(0)
+	}
+
+	r := gin.Default()
+	cDeployer, err := deployer.NewDockerDeployer(uname, password)
+	if err != nil {
+		fmt.Println("Failed to initialize docker for deployments")
+		os.Exit(0)
+	}
+
+	d := deployer.NewDeployer(cDeployer)
+	gw.NewGatewayHandler(r, d)
+	r.Run()
 }
