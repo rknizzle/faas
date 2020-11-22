@@ -1,4 +1,4 @@
-package manager
+package runner
 
 type ContainerRunner interface {
 	PullImage(string) error
