@@ -11,14 +11,19 @@ import (
 	"strings"
 )
 
+// Deployer handles deploying new functions that a user submits by unpacking the function data from
+// a users request and then using a ContainerDeployer to build and push a container image for later
+// invocation
 type Deployer struct {
 	c ContainerDeployer
 }
 
+// NewDeployer initializes a Deployer with a ContainerDeploy for building and pushing images
 func NewDeployer(c ContainerDeployer) Deployer {
 	return Deployer{c}
 }
 
+// Deploy unpacks the function code and then builds and pushes a container image
 func (deploy Deployer) Deploy(data models.FnData) error {
 	dir, err := dirFromBase64Data(data.Name, data.File)
 	if err != nil {
@@ -35,6 +40,7 @@ func (deploy Deployer) Deploy(data models.FnData) error {
 	return nil
 }
 
+// dirFromBase64Data decodes a base64 string into a directory containing the function code
 func dirFromBase64Data(fnName string, base64Data string) (string, error) {
 	filename, err := writeDataToZip(fnName, base64Data)
 	if err != nil {
@@ -57,6 +63,7 @@ func dirFromBase64Data(fnName string, base64Data string) (string, error) {
 	return dir, nil
 }
 
+// writeDataToZip converts a base64 encoding string back into the original zip file
 func writeDataToZip(fnName string, fnData string) (string, error) {
 	filename := fnName + ".zip"
 
@@ -73,8 +80,7 @@ func writeDataToZip(fnName string, fnData string) (string, error) {
 	return filename, nil
 }
 
-// Function found at https://golangcode.com/unzip-files-in-go/ (MIT License)
-// Unzip a file
+// Unzip a zip file into its file contents
 func Unzip(src string, dest string) ([]string, error) {
 
 	var filenames []string
