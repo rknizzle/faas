@@ -11,11 +11,14 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
+// DockerRunner implements ContainerRunner and uses the Docker SDK to pull images and run function
+// code in a Docker container
 type DockerRunner struct {
 	cli  *client.Client
 	auth string
 }
 
+// NewDockerDeployer initializes a DockerRunner with a Docker API version and credentials to access a Dockerhub registry
 func NewDockerRunner(registryUsername string, registryPassword string) (*DockerRunner, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
@@ -30,7 +33,8 @@ func NewDockerRunner(registryUsername string, registryPassword string) (*DockerR
 	return &DockerRunner{cli, auth}, nil
 }
 
-// Generate the dockerhub credentials from ENV variables
+// generateRegistryAuth converts a Dockerhub username and password into an authentication string
+// used by the Docker SDK
 func generateRegistryAuth(username string, password string) (string, error) {
 	if username == "" || password == "" {
 		return "", errors.New("Missing Dockerhub username or password")
@@ -48,7 +52,7 @@ func generateRegistryAuth(username string, password string) (string, error) {
 	return authStr, nil
 }
 
-// Pull an image from a remote repository
+// PullImage downloads a container image from Dockerhub
 func (d DockerRunner) PullImage(name string) error {
 	ctx := context.Background()
 	out, err := d.cli.ImagePull(ctx, name, types.ImagePullOptions{})
@@ -59,7 +63,7 @@ func (d DockerRunner) PullImage(name string) error {
 	return nil
 }
 
-// Create and start a container from a local image
+// RunContainer creates and starts a container from a local image
 func (d *DockerRunner) RunContainer(image string) error {
 	ctx := context.Background()
 
@@ -81,6 +85,7 @@ func (d *DockerRunner) RunContainer(image string) error {
 	return nil
 }
 
+// ContainerIP returns the IP address of a running Docker container
 func (d DockerRunner) ContainerIP(ctx context.Context, id string) (string, error) {
 	co, err := d.cli.ContainerInspect(ctx, id)
 	if err != nil {
