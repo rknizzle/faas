@@ -18,12 +18,12 @@ import (
 	"time"
 )
 
-type DockerManager struct {
+type DockerRunner struct {
 	cli  *client.Client
 	auth string
 }
 
-func NewDockerManager(registryUsername string, registryPassword string) (*DockerManager, error) {
+func NewDockerRunner(registryUsername string, registryPassword string) (*DockerRunner, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
 		return nil, err
@@ -34,11 +34,11 @@ func NewDockerManager(registryUsername string, registryPassword string) (*Docker
 		return nil, err
 	}
 
-	return &DockerManager{cli, auth}, nil
+	return &DockerRunner{cli, auth}, nil
 }
 
 // Builds a Docker image
-func (d DockerManager) BuildImage(directory string, tag string) error {
+func (d DockerRunner) BuildImage(directory string, tag string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300)*time.Second)
 	defer cancel()
 
@@ -71,7 +71,7 @@ func (d DockerManager) BuildImage(directory string, tag string) error {
 }
 
 // Push an image to remote repository
-func (d DockerManager) PushImage(image string) error {
+func (d DockerRunner) PushImage(image string) error {
 	ctx := context.Background()
 	fmt.Println("Going to push " + image)
 	out, err := d.cli.ImagePush(ctx, image, types.ImagePushOptions{
@@ -104,7 +104,7 @@ func generateRegistryAuth(username string, password string) (string, error) {
 }
 
 // Pull an image from a remote repository
-func (d DockerManager) PullImage(name string) error {
+func (d DockerRunner) PullImage(name string) error {
 	ctx := context.Background()
 	out, err := d.cli.ImagePull(ctx, name, types.ImagePullOptions{})
 	if err != nil {
@@ -116,7 +116,7 @@ func (d DockerManager) PullImage(name string) error {
 }
 
 // Create and start a container from a local image
-func (d *DockerManager) RunContainer(image string) error {
+func (d *DockerRunner) RunContainer(image string) error {
 	ctx := context.Background()
 
 	resp, err := d.cli.ContainerCreate(ctx, &container.Config{
@@ -152,7 +152,7 @@ func (d *DockerManager) RunContainer(image string) error {
 	return nil
 }
 
-func (d DockerManager) ContainerIP(ctx context.Context, id string) (string, error) {
+func (d DockerRunner) ContainerIP(ctx context.Context, id string) (string, error) {
 	co, err := d.cli.ContainerInspect(ctx, id)
 	if err != nil {
 		return "", err
