@@ -1,4 +1,4 @@
-package builder
+package deployer
 
 type ContainerDeployer interface {
 	PushImage(string) error
