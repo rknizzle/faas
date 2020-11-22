@@ -1,6 +1,6 @@
 package builder
 
-type ContainerBuilder interface {
+type ContainerDeployer interface {
 	PushImage(string) error
 	BuildImage(string, string) error
 }
