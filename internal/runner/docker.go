@@ -20,7 +20,7 @@ type DockerRunner struct {
 	auth string
 }
 
-// NewDockerDeployer initializes a DockerRunner with a Docker API version and credentials to access a Dockerhub registry
+// NewDockerRunner initializes a DockerRunner with a Docker API version and credentials to access a Dockerhub registry
 func NewDockerRunner(registryUsername string, registryPassword string) (*DockerRunner, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.40"))
 	if err != nil {
