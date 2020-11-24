@@ -3,16 +3,20 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/rknizzle/faas/internal/gateway/datastore"
 	"github.com/rknizzle/faas/internal/gateway/deployer"
+	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
 	"github.com/rknizzle/faas/internal/models"
 )
 
 type GatewayHandler struct {
 	Deployer deployer.Deployer
+	LB       loadbalancer.LoadBalancer
+	DS       datastore.Datastore
 }
 
-func NewGatewayHandler(r *gin.Engine, deploy deployer.Deployer) {
-	handler := &GatewayHandler{Deployer: deploy}
+func NewGatewayHandler(r *gin.Engine, deploy deployer.Deployer, lb loadbalancer.LoadBalancer, ds datastore.Datastore) {
+	handler := &GatewayHandler{Deployer: deploy, LB: lb, DS: ds}
 	r.GET("/ping", ping)
 
 	r.POST("/functions", handler.addFunctionHandler)
