@@ -9,6 +9,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"io"
+	"os"
 )
 
 // DockerRunner implements ContainerRunner and uses the Docker SDK to pull images and run function
@@ -60,6 +62,9 @@ func (d DockerRunner) PullImage(name string) error {
 		return err
 	}
 	defer out.Close()
+	// block until the image is fully downloaded
+	// TODO: Theres probably a better way to do this
+	io.Copy(os.Stdout, out)
 	return nil
 }
 
