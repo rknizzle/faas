@@ -37,6 +37,7 @@ func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"message": "Failed to get function data from request body",
 		})
+		return
 	}
 	err = gw.Deployer.Deploy(fnData)
 	if err != nil {
@@ -44,12 +45,14 @@ func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
 			"message": "Failed to deploy function",
 			"info":    err.Error(),
 		})
+		return
 	}
 
 	c.JSON(200, gin.H{
 		"message": "ok",
 	})
 }
+
 func fnDataFromReq(c *gin.Context) (models.FnData, error) {
 	rawData, err := c.GetRawData()
 	if err != nil {
