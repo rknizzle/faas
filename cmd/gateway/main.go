@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	gw "github.com/rknizzle/faas/internal/gateway/api"
+	"github.com/rknizzle/faas/internal/gateway/datastore"
 	"github.com/rknizzle/faas/internal/gateway/deployer"
+	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
 	"os"
 )
 
@@ -24,6 +26,13 @@ func main() {
 	}
 
 	d := deployer.NewDeployer(cDeployer)
-	gw.NewGatewayHandler(r, d)
+	lb := loadbalancer.LoadBalancer{}
+	ds, err := datastore.NewDatastore()
+	if err != nil {
+		fmt.Println("Failed to connect to database")
+		os.Exit(0)
+	}
+
+	gw.NewGatewayHandler(r, d, lb, ds)
 	r.Run()
 }
