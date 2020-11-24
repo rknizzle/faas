@@ -30,8 +30,17 @@ func ping(c *gin.Context) {
 }
 
 func (gw GatewayHandler) invokeHandler(c *gin.Context) {
-	c.JSON(400, gin.H{
-		"message": "Function invocation not implemented yet",
+	// invoke the function on a runner machine
+	err := gw.LB.SendToRunner("rkneills/fn")
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "OK",
 	})
 }
 
