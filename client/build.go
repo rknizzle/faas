@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/rknizzle/faas/api"
+	"github.com/rknizzle/faas/internal/models"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -61,7 +61,7 @@ func Build() (string, error) {
 	encoded := base64.StdEncoding.EncodeToString(content)
 
 	// format the function data to send to the server
-	fd := &api.FnData{File: encoded, Name: name}
+	fd := &models.FnData{File: encoded, Name: name}
 
 	// convert function data to JSON body to send in HTTP request to server
 	funcByte, _ := json.Marshal(fd)

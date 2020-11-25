@@ -1,99 +1,46 @@
-package api
+package deployer
 
 import (
 	"archive/zip"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/rknizzle/faas/manager"
+	"github.com/rknizzle/faas/internal/models"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-type FnData struct {
-	File string `json:"file"`
-	Name string `json:"name"`
+// Deployer handles deploying new functions that a user submits by unpacking the function data from
+// a users request and then using a ContainerDeployer to build and push a container image for later
+// invocation
+type Deployer struct {
+	c ContainerDeployer
 }
 
-func Start() {
-	r := gin.Default()
-	m := manager.New()
-
-	r.GET("/ping", ping)
-
-	r.POST("/functions", addFunctionHandler(m))
-	r.POST("/functions/:fn", invokeHandler(m))
-
-	// Listen and serve on localhost
-	r.Run()
+// NewDeployer initializes a Deployer with a ContainerDeploy for building and pushing images
+func NewDeployer(c ContainerDeployer) Deployer {
+	return Deployer{c}
 }
 
-func ping(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
-}
-
-func invokeHandler(m *manager.Manager) gin.HandlerFunc {
-	return gin.HandlerFunc(func(c *gin.Context) {
-		fn := c.Param("fn")
-		fmt.Println("Executing function: " + fn)
-		m.RunContainer(fn)
-
-		c.JSON(200, gin.H{
-			"success": "true",
-		})
-	})
-}
-
-func addFunctionHandler(m *manager.Manager) gin.HandlerFunc {
-	return gin.HandlerFunc(func(c *gin.Context) {
-
-		data, err := fnDataFromReq(c)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-		}
-
-		fmt.Println("Creating function...")
-
-		dir, err := dirFromBase64Data(data.Name, data.File)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-		}
-
-		tag := data.Name
-		m.BuildImage(dir, tag)
-
-		// remove temporary directory used to build the image
-		os.RemoveAll(dir)
-
-		c.JSON(200, gin.H{
-			"invoke": c.Request.Host + "/functions/" + tag,
-		})
-	})
-}
-
-func fnDataFromReq(c *gin.Context) (FnData, error) {
-	rawData, err := c.GetRawData()
+// Deploy unpacks the function code and then builds and pushes a container image
+func (deploy Deployer) Deploy(data models.FnData) error {
+	dir, err := dirFromBase64Data(data.Name, data.File)
 	if err != nil {
-		return FnData{}, err
+		return err
 	}
 
-	var fnData FnData
-	err = json.Unmarshal(rawData, &fnData)
-	if err != nil {
-		return FnData{}, err
-	}
-	return fnData, nil
+	tag := data.Name
+	deploy.c.BuildImage(dir, tag)
+	//b.cBuilder.PushImage()
+
+	// remove temporary directory used to build the image
+	os.RemoveAll(dir)
+
+	return nil
 }
 
+// dirFromBase64Data decodes a base64 string into a directory containing the function code
 func dirFromBase64Data(fnName string, base64Data string) (string, error) {
 	filename, err := writeDataToZip(fnName, base64Data)
 	if err != nil {
@@ -116,6 +63,7 @@ func dirFromBase64Data(fnName string, base64Data string) (string, error) {
 	return dir, nil
 }
 
+// writeDataToZip converts a base64 encoding string back into the original zip file
 func writeDataToZip(fnName string, fnData string) (string, error) {
 	filename := fnName + ".zip"
 
@@ -132,8 +80,7 @@ func writeDataToZip(fnName string, fnData string) (string, error) {
 	return filename, nil
 }
 
-// Function found at https://golangcode.com/unzip-files-in-go/ (MIT License)
-// Unzip a file
+// Unzip a zip file into its file contents
 func Unzip(src string, dest string) ([]string, error) {
 
 	var filenames []string
