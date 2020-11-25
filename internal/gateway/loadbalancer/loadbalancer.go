@@ -20,11 +20,11 @@ func (lb LoadBalancer) SendToRunner(image string) error {
 	if err != nil {
 		return err
 	}
-	err = cRunner.PullImage("rkneills/fn:latest")
+	err = cRunner.PullImage(image)
 	if err != nil {
 		return err
 	}
-	err = cRunner.RunContainer("rkneills/fn:latest")
+	err = cRunner.RunContainer(image)
 	if err != nil {
 		return err
 	}
