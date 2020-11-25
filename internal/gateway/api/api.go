@@ -30,8 +30,11 @@ func ping(c *gin.Context) {
 }
 
 func (gw GatewayHandler) invokeHandler(c *gin.Context) {
+	// get the function name from the path param
+	fn := c.Param("fn")
+
 	// invoke the function on a runner machine
-	err := gw.LB.SendToRunner("rkneills/fn")
+	err := gw.LB.SendToRunner("rkneills/" + fn)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),
