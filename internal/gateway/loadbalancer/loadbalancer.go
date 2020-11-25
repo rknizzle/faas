@@ -1,7 +1,6 @@
 package loadbalancer
 
 import (
-	"fmt"
 	"github.com/rknizzle/faas/internal/runner"
 	"os"
 )
