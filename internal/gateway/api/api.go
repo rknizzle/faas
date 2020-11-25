@@ -34,7 +34,7 @@ func (gw GatewayHandler) invokeHandler(c *gin.Context) {
 	fn := c.Param("fn")
 
 	// invoke the function on a runner machine
-	err := gw.LB.SendToRunner("rkneills/" + fn)
+	err := gw.LB.SendToRunner(fn)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),
