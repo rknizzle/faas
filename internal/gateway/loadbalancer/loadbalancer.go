@@ -20,10 +20,15 @@ func (lb LoadBalancer) SendToRunner(image string) error {
 	if err != nil {
 		return err
 	}
-	err = cRunner.PullImage(image)
-	if err != nil {
-		return err
-	}
+	// TODO: until more features are implemented this will just be a local demo so not going to pull
+	// the image from somehwere remote. It'll only use local images
+	/*
+		err = cRunner.PullImage(image)
+		if err != nil {
+			return err
+		}
+	*/
+
 	err = cRunner.RunContainer(image)
 	if err != nil {
 		return err
