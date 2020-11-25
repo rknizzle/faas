@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/rknizzle/faas/api"
+	"github.com/gin-gonic/gin"
 	"github.com/rknizzle/faas/client"
+	"github.com/rknizzle/faas/internal/gateway/api"
+	"github.com/rknizzle/faas/internal/gateway/datastore"
+	"github.com/rknizzle/faas/internal/gateway/deployer"
+	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
 	"log"
 	"os"
 	"path/filepath"
@@ -47,7 +51,7 @@ func main() {
 		}
 	} else if subcommand == "start" {
 		// start the server
-		api.Start()
+		startGatewayAPI()
 	} else if subcommand == "-h" {
 		helpInfo()
 	} else if subcommand == "--help" {
@@ -60,7 +64,31 @@ func main() {
 func helpInfo() {
 	fmt.Println("usage: faas <command>")
 	fmt.Println("commands:")
+	fmt.Println("  start (Starts the faas server")
 	fmt.Println("  init (only nodejs functions currently supported)")
 	fmt.Println("  build")
 	fmt.Println("  invoke <function>")
+}
+
+func startGatewayAPI() {
+	uname := os.Getenv("DOCKER_USERNAME")
+	password := os.Getenv("DOCKER_PASSWORD")
+	if len(uname) == 0 || len(password) == 0 {
+		fmt.Println("Missing Docker username or password")
+		os.Exit(0)
+	}
+
+	r := gin.Default()
+	cDeployer, err := deployer.NewDockerDeployer(uname, password)
+	if err != nil {
+		fmt.Println("Failed to initialize docker for deployments")
+		os.Exit(0)
+	}
+
+	d := deployer.NewDeployer(cDeployer)
+	lb := loadbalancer.LoadBalancer{}
+	ds := datastore.Datastore{}
+
+	api.NewGatewayHandler(r, d, lb, ds)
+	r.Run()
 }
