@@ -65,7 +65,7 @@ func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"message": "ok",
+		"invoke": c.Request.Host + "/functions/" + fnData.Name,
 	})
 }
 
