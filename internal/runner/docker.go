@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"io"
 	"os"
@@ -87,6 +88,8 @@ func (d *DockerRunner) RunContainer(image string) error {
 		return err
 	}
 
+	// for now log the containers logs to stdout
+	d.logOutputToConsole(ctx, resp.ID)
 	return nil
 }
 
@@ -98,4 +101,24 @@ func (d DockerRunner) ContainerIP(ctx context.Context, id string) (string, error
 	}
 
 	return co.NetworkSettings.IPAddress, nil
+}
+
+// output the container logs to the console
+func (d DockerRunner) logOutputToConsole(ctx context.Context, id string) error {
+	statusCh, errCh := d.cli.ContainerWait(ctx, id, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return err
+		}
+	case <-statusCh:
+	}
+
+	out, err := d.cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		return err
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	return nil
 }
