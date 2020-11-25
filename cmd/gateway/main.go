@@ -27,11 +27,7 @@ func main() {
 
 	d := deployer.NewDeployer(cDeployer)
 	lb := loadbalancer.LoadBalancer{}
-	ds, err := datastore.NewDatastore()
-	if err != nil {
-		fmt.Println("Failed to connect to database")
-		os.Exit(0)
-	}
+	ds := datastore.Datastore{}
 
 	gw.NewGatewayHandler(r, d, lb, ds)
 	r.Run()
