@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// DockerDeployer implements ContainerDeployer and uses the Docker SDK to build and push images
+// DockerDeployer uses the Docker SDK to build and push images to a remote registry
 type DockerDeployer struct {
 	cli  *client.Client
 	auth string
