@@ -10,16 +10,14 @@ import (
 	"strings"
 )
 
-// Extractor extracts the directory containing the function code from the input base64 encoded zip
-// file
-type Extractor interface {
-	FnDirFromBase64Data(string, string) (string, error)
+type Extractor struct{}
+
+func NewExtractor() Extractor {
+	return Extractor{}
 }
 
-type extractor struct{}
-
 // fnDirFromBase64Data decodes a base64 string into a directory containing the function code
-func (e extractor) FnDirFromBase64Data(fnName string, base64Data string) (string, error) {
+func (e Extractor) FnDirFromBase64Data(fnName string, base64Data string) (string, error) {
 	filename, err := writeDataToZip(fnName, base64Data)
 	if err != nil {
 		return "", err
