@@ -12,23 +12,16 @@ type containerDeployer interface {
 	PushImage(string) error
 }
 
-// extractor extracts the directory containing the function code from the input base64 encoded zip
-// file
-type extractor interface {
-	FnDirFromBase64Data(string, string) (string, error)
-}
-
 // Deployer handles deploying new functions that a user submits by unpacking the function data from
 // a users request and then using a ContainerDeployer to build and push a container image for later
 // invocation
 type Deployer struct {
 	c containerDeployer
-	e extractor
 }
 
 // NewDeployer initializes a Deployer with a ContainerDeploy for building and pushing images
-func NewDeployer(c containerDeployer, e extractor) Deployer {
-	return Deployer{c, e}
+func NewDeployer(c containerDeployer) Deployer {
+	return Deployer{c}
 }
 
 // Deploy unpacks the function code and then builds and pushes a container image
