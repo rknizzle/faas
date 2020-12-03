@@ -10,13 +10,13 @@ import (
 )
 
 type GatewayHandler struct {
-	Deployer deployer.Deployer
-	LB       loadbalancer.LoadBalancer
-	DS       datastore.Datastore
+	D  deployer.Deployer
+	LB loadbalancer.LoadBalancer
+	DS datastore.Datastore
 }
 
-func NewGatewayHandler(r *gin.Engine, deploy deployer.Deployer, lb loadbalancer.LoadBalancer, ds datastore.Datastore) {
-	handler := &GatewayHandler{Deployer: deploy, LB: lb, DS: ds}
+func NewGatewayHandler(r *gin.Engine, d deployer.Deployer, lb loadbalancer.LoadBalancer, ds datastore.Datastore) {
+	handler := &GatewayHandler{D: d, LB: lb, DS: ds}
 	r.GET("/ping", ping)
 
 	r.POST("/functions", handler.addFunctionHandler)
@@ -55,7 +55,7 @@ func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
 		})
 		return
 	}
-	err = gw.Deployer.Deploy(fnData)
+	err = gw.D.Deploy(fnData)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": "Failed to deploy function",
