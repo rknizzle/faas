@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/rknizzle/faas/internal/models"
+	"github.com/spf13/afero"
 	"io"
 	"os"
 	"path/filepath"
@@ -22,17 +23,18 @@ type containerDeployer interface {
 // a users request and then using a ContainerDeployer to build and push a container image for later
 // invocation
 type Deployer struct {
-	c containerDeployer
+	c  containerDeployer
+	fs afero.Fs
 }
 
 // NewDeployer initializes a Deployer with a ContainerDeploy for building and pushing images
-func NewDeployer(c containerDeployer) Deployer {
-	return Deployer{c}
+func NewDeployer(c containerDeployer, fs afero.Fs) Deployer {
+	return Deployer{c, fs}
 }
 
 // Deploy unpacks the function code and then builds and pushes a container image
 func (d Deployer) Deploy(data models.FnData) error {
-	dir, err := d.e.FnDirFromBase64Data(data.Name, data.File)
+	dir, err := d.FnDirFromBase64Data(data.Name, data.File)
 	if err != nil {
 		return err
 	}
@@ -42,7 +44,7 @@ func (d Deployer) Deploy(data models.FnData) error {
 	// d.c.PushImage()
 
 	// remove temporary directory used to build the image
-	os.RemoveAll(dir)
+	d.fs.RemoveAll(dir)
 
 	return nil
 }
@@ -62,7 +64,7 @@ func (d Deployer) FnDirFromBase64Data(fnName string, base64Data string) (string,
 	}
 
 	// remove the zip file now that the directory has been extracted
-	err = os.Remove(filename)
+	err = d.fs.Remove(filename)
 	if err != nil {
 		return "", err
 	}
@@ -71,10 +73,10 @@ func (d Deployer) FnDirFromBase64Data(fnName string, base64Data string) (string,
 }
 
 // writeDataToZip converts a base64 encoding string back into the original zip file
-func writeDataToZip(fnName string, fnData string) (string, error) {
+func (d Deployer) writeDataToZip(fnName string, fnData string) (string, error) {
 	filename := fnName + ".zip"
 
-	zipFile, err := os.Create(filename)
+	zipFile, err := d.fs.Create(filename)
 	if err != nil {
 		return "", err
 	}
@@ -88,7 +90,7 @@ func writeDataToZip(fnName string, fnData string) (string, error) {
 }
 
 // Unzip a zip file into its file contents
-func Unzip(src string, dest string) ([]string, error) {
+func (d Deployer) Unzip(src string, dest string) ([]string, error) {
 
 	var filenames []string
 
@@ -112,16 +114,16 @@ func Unzip(src string, dest string) ([]string, error) {
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			os.MkdirAll(fpath, os.ModePerm)
+			d.fs.MkdirAll(fpath, os.ModePerm)
 			continue
 		}
 
 		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+		if err = d.fs.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
 			return filenames, err
 		}
 
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := d.fs.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return filenames, err
 		}
