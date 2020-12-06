@@ -16,3 +16,17 @@ func TestGenerateRegistryAuth(t *testing.T) {
 		t.Fatalf("expected %s, got %s", expected, got)
 	}
 }
+
+func TestGenerateRegistryAuthMissingUsername(t *testing.T) {
+	_, err := generateRegistryAuth("", "examplePass")
+	if err == nil {
+		t.Fatal("Expected test case to fail due to missing username")
+	}
+}
+
+func TestGenerateRegistryAuthMissingPassword(t *testing.T) {
+	_, err := generateRegistryAuth("exampleUser", "")
+	if err == nil {
+		t.Fatal("Expected test case to fail due to missing password")
+	}
+}
