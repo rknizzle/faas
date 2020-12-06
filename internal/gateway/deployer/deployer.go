@@ -51,14 +51,14 @@ func (d Deployer) Deploy(data models.FnData) error {
 
 // fnDirFromBase64Data decodes a base64 string into a directory containing the function code
 func (d Deployer) FnDirFromBase64Data(fnName string, base64Data string) (string, error) {
-	filename, err := writeDataToZip(fnName, base64Data)
+	filename, err := d.writeDataToZip(fnName, base64Data)
 	if err != nil {
 		return "", err
 	}
 
 	// unzip the file into a directory called the function name
 	dir := fnName
-	_, err = Unzip(filename, dir)
+	_, err = d.Unzip(filename, dir)
 	if err != nil {
 		return "", err
 	}
