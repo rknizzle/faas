@@ -42,7 +42,10 @@ func (d Deployer) Deploy(data models.FnData) error {
 	}
 
 	tag := data.Name
-	d.c.BuildImage(dir, tag)
+	err = d.c.BuildImage(dir, tag)
+	if err != nil {
+		return err
+	}
 	// d.c.PushImage()
 
 	// remove temporary directory used to build the image
