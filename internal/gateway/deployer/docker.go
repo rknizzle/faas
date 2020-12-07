@@ -5,22 +5,23 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 )
 
-type dockerClient interface {
+type DockerClient interface {
 	ImageBuild(context.Context, io.Reader, types.ImageBuildOptions) (types.ImageBuildResponse, error)
 	ImagePush(context.Context, string, types.ImagePushOptions) (io.ReadCloser, error)
 }
 
 // DockerDeployer uses the Docker SDK to build and push images to a remote registry
 type DockerDeployer struct {
-	cli  dockerClient
+	cli  DockerClient
 	auth string
 }
 
