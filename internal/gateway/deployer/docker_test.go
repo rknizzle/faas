@@ -1,6 +1,7 @@
 package deployer
 
 import (
+	"errors"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -57,6 +58,24 @@ func TestTestBuildImage(t *testing.T) {
 		err := dd.BuildImage("name", "tag")
 		if err != nil {
 			t.Fatalf("err %s", err)
+		}
+	})
+
+	t.Run("BuildImage returns an error when docker ImageBuild returns an error", func(t *testing.T) {
+		mockDockerClient.On(
+			"ImageBuild",
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+		).Return(
+			types.ImageBuildResponse{},
+			errors.New("Bad thing happen"),
+		).Once()
+
+		dd := DockerDeployer{mockDockerClient, "xxx"}
+		err := dd.BuildImage("name", "tag")
+		if err == nil {
+			t.Fatalf("Expected ImageBuild to return an error")
 		}
 	})
 }
