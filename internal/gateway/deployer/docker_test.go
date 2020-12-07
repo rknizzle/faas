@@ -1,11 +1,13 @@
 package deployer
 
 import (
-	"context"
-	"io"
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
+	"github.com/rknizzle/faas/internal/gateway/deployer/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestGenerateRegistryAuth(t *testing.T) {
@@ -35,32 +37,26 @@ func TestGenerateRegistryAuthMissingPassword(t *testing.T) {
 	}
 }
 
-// mocks for DockerClient
-type fakeIOReadCloser struct{}
+func TestTestBuildImage(t *testing.T) {
+	mockDockerClient := new(mocks.DockerClient)
+	t.Run("success", func(t *testing.T) {
 
-func (f fakeIOReadCloser) Read([]byte) (int, error) { return 0, nil }
-func (f fakeIOReadCloser) Close() error             { return nil }
+		mockDockerClient.On(
+			"ImageBuild",
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+		).Return(
+			types.ImageBuildResponse{
+				Body: ioutil.NopCloser(strings.NewReader("test")),
+			},
+			nil,
+		).Once()
 
-type mockDockerClient struct{}
-
-func (m mockDockerClient) ImageBuild(context.Context, io.Reader, types.ImageBuildOptions) (types.ImageBuildResponse, error) {
-	return types.ImageBuildResponse{}, nil
-}
-
-func (m mockDockerClient) ImagePush(context.Context, string, types.ImagePushOptions) (io.ReadCloser, error) {
-	return fakeIOReadCloser{}, nil
-}
-
-func newMockDockerDeployer() DockerDeployer {
-	dc := mockDockerClient{}
-	return DockerDeployer{dc, "xxx"}
-}
-
-func TestBuildImage(t *testing.T) {
-	readAll = func(io.Reader) ([]byte, error) { return nil, nil }
-	dd := newMockDockerDeployer()
-	err := dd.BuildImage("name", "tag")
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
+		dd := DockerDeployer{mockDockerClient, "xxx"}
+		err := dd.BuildImage("name", "tag")
+		if err != nil {
+			t.Fatalf("err %s", err)
+		}
+	})
 }
