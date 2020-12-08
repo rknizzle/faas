@@ -113,7 +113,7 @@ func (d DockerRunner) ContainerIP(ctx context.Context, id string) (string, error
 }
 
 // output the container logs to the console
-func (d DockerRunner) logOutputToConsole(ctx context.Context, id string) error {
+func (d DockerRunner) LogOutputToConsole(ctx context.Context, id string) error {
 	statusCh, errCh := d.cli.ContainerWait(ctx, id, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
