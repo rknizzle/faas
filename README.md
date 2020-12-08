@@ -1,5 +1,5 @@
 # FAAS
-![Tests](https://github.com/rknizzle/faas/workflows/Go/badge.svg)
+![Tests](https://github.com/rknizzle/faas/workflows/Tests/badge.svg)
 
 A simple Functions-as-a-Service(FaaS) platform using Docker containers for the purpose of experimentation/learning
 
