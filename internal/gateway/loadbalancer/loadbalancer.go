@@ -1,8 +1,10 @@
 package loadbalancer
 
 import (
-	"github.com/rknizzle/faas/internal/runner"
+	"context"
 	"os"
+
+	"github.com/rknizzle/faas/internal/runner"
 )
 
 type LoadBalancer struct{}
@@ -29,9 +31,16 @@ func (lb LoadBalancer) SendToRunner(image string) error {
 		}
 	*/
 
-	err = cRunner.RunContainer(image)
+	id, err := cRunner.RunContainer(image)
 	if err != nil {
 		return err
 	}
+
+	ctx := context.Background()
+	err = cRunner.LogOutputToConsole(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
