@@ -5,19 +5,30 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
+	"os"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	"io"
-	"os"
 )
+
+type DockerClient interface {
+	ImagePull(context.Context, string, types.ImagePullOptions) (io.ReadCloser, error)
+	ContainerStart(context.Context, string, types.ContainerStartOptions) error
+	ContainerCreate(context.Context, *container.Config, *container.HostConfig, *network.NetworkingConfig, string) (container.ContainerCreateCreatedBody, error)
+	ContainerInspect(context.Context, string) (types.ContainerJSON, error)
+	ContainerWait(context.Context, string, container.WaitCondition) (<-chan container.ContainerWaitOKBody, <-chan error)
+	ContainerLogs(context.Context, string, types.ContainerLogsOptions) (io.ReadCloser, error)
+}
 
 // DockerRunner implements ContainerRunner and uses the Docker SDK to pull images and run function
 // code in a Docker container
 type DockerRunner struct {
-	cli  *client.Client
+	cli  DockerClient
 	auth string
 }
 
