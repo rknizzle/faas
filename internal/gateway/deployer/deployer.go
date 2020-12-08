@@ -2,60 +2,68 @@ package deployer
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/rknizzle/faas/internal/models"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rknizzle/faas/internal/models"
+	"github.com/spf13/afero"
 )
+
+// containerDeployer contains all the methods required to turn function code into a container image
+// and then sent to a container registry where it can be pulled for invocation
+type containerDeployer interface {
+	BuildImage(string, string) error
+	PushImage(string) error
+}
 
 // Deployer handles deploying new functions that a user submits by unpacking the function data from
 // a users request and then using a ContainerDeployer to build and push a container image for later
 // invocation
 type Deployer struct {
-	c ContainerDeployer
+	c  containerDeployer
+	fs afero.Fs
 }
 
 // NewDeployer initializes a Deployer with a ContainerDeploy for building and pushing images
-func NewDeployer(c ContainerDeployer) Deployer {
-	return Deployer{c}
+func NewDeployer(c containerDeployer, fs afero.Fs) Deployer {
+	return Deployer{c, fs}
 }
 
 // Deploy unpacks the function code and then builds and pushes a container image
-func (deploy Deployer) Deploy(data models.FnData) error {
-	dir, err := dirFromBase64Data(data.Name, data.File)
+func (d Deployer) Deploy(data models.FnData) error {
+	dir, err := d.FnDirFromBase64Data(data.Name, data.File)
 	if err != nil {
 		return err
 	}
 
 	tag := data.Name
-	deploy.c.BuildImage(dir, tag)
-	//b.cBuilder.PushImage()
+	err = d.c.BuildImage(dir, tag)
+	if err != nil {
+		return err
+	}
+	// d.c.PushImage()
 
 	// remove temporary directory used to build the image
-	os.RemoveAll(dir)
+	d.fs.RemoveAll(dir)
 
 	return nil
 }
 
-// dirFromBase64Data decodes a base64 string into a directory containing the function code
-func dirFromBase64Data(fnName string, base64Data string) (string, error) {
-	filename, err := writeDataToZip(fnName, base64Data)
+// fnDirFromBase64Data decodes a base64 string into a directory containing the function code
+func (d Deployer) FnDirFromBase64Data(fnName string, base64Data string) (string, error) {
+	zipFile, err := d.writeDataToZip(fnName, base64Data)
 	if err != nil {
 		return "", err
 	}
 
 	// unzip the file into a directory called the function name
 	dir := fnName
-	_, err = Unzip(filename, dir)
-	if err != nil {
-		return "", err
-	}
-
-	// remove the zip file now that the directory has been extracted
-	err = os.Remove(filename)
+	_, err = d.Unzip(zipFile, dir)
 	if err != nil {
 		return "", err
 	}
@@ -64,35 +72,30 @@ func dirFromBase64Data(fnName string, base64Data string) (string, error) {
 }
 
 // writeDataToZip converts a base64 encoding string back into the original zip file
-func writeDataToZip(fnName string, fnData string) (string, error) {
-	filename := fnName + ".zip"
-
-	zipFile, err := os.Create(filename)
-	if err != nil {
-		return "", err
-	}
-	defer zipFile.Close()
-
+func (d Deployer) writeDataToZip(fnName string, fnData string) (*bytes.Buffer, error) {
 	decoder := base64.NewDecoder(base64.StdEncoding, strings.NewReader(fnData))
+	buf := &bytes.Buffer{}
 
 	// write decoded data to zip file
-	io.Copy(zipFile, decoder)
-	return filename, nil
+	_, err := io.Copy(buf, decoder)
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
 
 // Unzip a zip file into its file contents
-func Unzip(src string, dest string) ([]string, error) {
+func (d Deployer) Unzip(src *bytes.Buffer, dest string) ([]string, error) {
 
 	var filenames []string
 
-	r, err := zip.OpenReader(src)
+	b := src.Bytes()
+	r, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
 	if err != nil {
 		return filenames, err
 	}
-	defer r.Close()
 
 	for _, f := range r.File {
-
 		// Store filename/path for returning and using later on
 		fpath := filepath.Join(dest, f.Name)
 
@@ -105,16 +108,16 @@ func Unzip(src string, dest string) ([]string, error) {
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			os.MkdirAll(fpath, os.ModePerm)
+			d.fs.MkdirAll(fpath, os.ModePerm)
 			continue
 		}
 
 		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+		if err = d.fs.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
 			return filenames, err
 		}
 
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := d.fs.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return filenames, err
 		}

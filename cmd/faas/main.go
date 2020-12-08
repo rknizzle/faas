@@ -8,6 +8,7 @@ import (
 	"github.com/rknizzle/faas/internal/gateway/datastore"
 	"github.com/rknizzle/faas/internal/gateway/deployer"
 	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
+	"github.com/spf13/afero"
 	"log"
 	"os"
 	"path/filepath"
@@ -85,7 +86,8 @@ func startGatewayAPI() {
 		os.Exit(0)
 	}
 
-	d := deployer.NewDeployer(cDeployer)
+	fs := afero.NewOsFs()
+	d := deployer.NewDeployer(cDeployer, fs)
 	lb := loadbalancer.LoadBalancer{}
 	ds := datastore.Datastore{}
 

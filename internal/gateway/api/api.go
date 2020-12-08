@@ -9,14 +9,14 @@ import (
 	"github.com/rknizzle/faas/internal/models"
 )
 
-type GatewayHandler struct {
-	Deployer deployer.Deployer
-	LB       loadbalancer.LoadBalancer
-	DS       datastore.Datastore
+type gatewayHandler struct {
+	d  deployer.Deployer
+	lb loadbalancer.LoadBalancer
+	ds datastore.Datastore
 }
 
-func NewGatewayHandler(r *gin.Engine, deploy deployer.Deployer, lb loadbalancer.LoadBalancer, ds datastore.Datastore) {
-	handler := &GatewayHandler{Deployer: deploy, LB: lb, DS: ds}
+func NewGatewayHandler(r *gin.Engine, d deployer.Deployer, lb loadbalancer.LoadBalancer, ds datastore.Datastore) {
+	handler := &gatewayHandler{d: d, lb: lb, ds: ds}
 	r.GET("/ping", ping)
 
 	r.POST("/functions", handler.addFunctionHandler)
@@ -29,12 +29,12 @@ func ping(c *gin.Context) {
 	})
 }
 
-func (gw GatewayHandler) invokeHandler(c *gin.Context) {
+func (gw gatewayHandler) invokeHandler(c *gin.Context) {
 	// get the function name from the path param
 	fn := c.Param("fn")
 
 	// invoke the function on a runner machine
-	err := gw.LB.SendToRunner(fn)
+	err := gw.lb.SendToRunner(fn)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),
@@ -47,7 +47,7 @@ func (gw GatewayHandler) invokeHandler(c *gin.Context) {
 	})
 }
 
-func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
+func (gw gatewayHandler) addFunctionHandler(c *gin.Context) {
 	fnData, err := fnDataFromReq(c)
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -55,7 +55,7 @@ func (gw GatewayHandler) addFunctionHandler(c *gin.Context) {
 		})
 		return
 	}
-	err = gw.Deployer.Deploy(fnData)
+	err = gw.d.Deploy(fnData)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": "Failed to deploy function",

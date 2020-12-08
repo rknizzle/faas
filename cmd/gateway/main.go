@@ -25,7 +25,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	d := deployer.NewDeployer(cDeployer)
+	e := deployer.NewExtractor()
+	d := deployer.NewDeployer(cDeployer, e)
 	lb := loadbalancer.LoadBalancer{}
 	ds := datastore.Datastore{}
 
