@@ -81,7 +81,7 @@ func (d DockerRunner) PullImage(name string) error {
 }
 
 // RunContainer creates and starts a container from a local image
-func (d *DockerRunner) RunContainer(image string) error {
+func (d *DockerRunner) RunContainer(image string) (string, error) {
 	ctx := context.Background()
 
 	resp, err := d.cli.ContainerCreate(ctx, &container.Config{
@@ -91,17 +91,15 @@ func (d *DockerRunner) RunContainer(image string) error {
 		},
 	}, nil, nil, "")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = d.cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	// for now log the containers logs to stdout
-	d.logOutputToConsole(ctx, resp.ID)
-	return nil
+	return resp.ID, nil
 }
 
 // ContainerIP returns the IP address of a running Docker container
