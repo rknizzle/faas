@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/container"
@@ -23,6 +25,19 @@ func TestRunContainer(t *testing.T) {
 
 		if id != "123" {
 			t.Fatalf("Returned ID did not match ID generated from ContainerCreate. Expected 123 and got %s", id)
+		}
+	})
+}
+
+func TestPullImage(t *testing.T) {
+	mockDockerClient := new(mocks.DockerClient)
+	t.Run("success", func(t *testing.T) {
+		mockDockerClient.On("ImagePull", mock.Anything, "name", mock.Anything).Return(ioutil.NopCloser(strings.NewReader("test")), nil).Once()
+
+		dr := DockerRunner{mockDockerClient, "xxx"}
+		err := dr.PullImage("name")
+		if err != nil {
+			t.Fatalf("err %s", err)
 		}
 	})
 }
