@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [closed]
+
+jobs:
+  release-linux-amd64:
+    name: release linux/amd64
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.2
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GOARCH: "amd64"
+      GOOS: linux
+      # EXTRA_FILES: "LICENSE"
