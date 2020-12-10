@@ -28,4 +28,4 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ./faas
-        tag: ${{ github.ref }}
+        tag: ${{ github.sha }}
