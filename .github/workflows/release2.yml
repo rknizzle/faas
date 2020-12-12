@@ -72,3 +72,5 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ./faas
         tag: v${{ steps.increment_version.outputs.next-version }}
+        release_name: v${{ steps.increment_version.outputs.next-version }}
+        body: "linux/amd64 binary"
