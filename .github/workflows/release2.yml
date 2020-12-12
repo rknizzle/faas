@@ -53,7 +53,7 @@ jobs:
       uses: christian-draeger/increment-semantic-version@1.0.2
       with:
         current-version: ${{ steps.previous_tag.outputs.tag }}
-        version-fragment: 'minor'
+        version-fragment: 'feature'
 
     # TODO: Do I also need to push the incremeneted tag or will upload-release-action handle that
     # for me?
