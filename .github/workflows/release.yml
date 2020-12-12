@@ -45,6 +45,8 @@ jobs:
           # remove the v from the front of the version
           tag="${tag:1}"
         fi
+
+        echo "previous version: $tag"
         echo "::set-output name=version::${tag}"
 
     # TODO: check PR body for version increment type (major, feature, patch)
