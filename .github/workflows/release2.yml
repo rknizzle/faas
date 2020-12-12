@@ -17,6 +17,13 @@ jobs:
     # Checkout code
     - uses: actions/checkout@v2
 
+    # Get the previous tag version
+    - name: 'Get the previous tag version'
+      id: previous_tag
+      uses: WyriHaximus/github-action-get-previous-tag@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     # Install Go
     - name: Install Go
       uses: actions/setup-go@v2
@@ -28,12 +35,6 @@ jobs:
     - name: Build
       run: go build -o . ./cmd/faas/...
 
-    # Get the previous tag version
-    - name: 'Get the previous tag version'
-      id: previous_tag
-      uses: WyriHaximus/github-action-get-previous-tag@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # TODO: check PR body for major or patch keyword
 
