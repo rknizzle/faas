@@ -39,6 +39,13 @@ jobs:
         echo $rev
         tag=$(git describe --tags $rev)
         echo $tag
+        # TODO: strip the v off the front if there is one
+        firstchar=`echo $tag | cut -c1-1`
+        if [ "$firstchar" -eq "v" ]; then
+          # remove the v from the front of the version
+          tag="${tag:1}"
+        fi
+
         echo "::set-output name=tag::${tag}"
         #uses: WyriHaximus/github-action-get-previous-tag@master
         #env:
@@ -64,4 +71,4 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ./faas
-        tag: ${{ steps.increment_version.outputs.next-version }}
+        tag: v${{ steps.increment_version.outputs.next-version }}
