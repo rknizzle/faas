@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - development
+      #- master
+    types: [closed]
+
+jobs:
+  release-linux-amd64:
+    name: release linux/amd64
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    # Install Go
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.15
+
+    # Checkout code
+    - uses: actions/checkout@v2
+
+    # Build binary
+    - name: Build
+      run: go build -o . ./cmd/faas/...
+
+    # Get the previous tag version
+    - name: 'Get the previous tag version'
+      id: previous_tag
+      uses: WyriHaximus/github-action-get-previous-tag@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # TODO: check PR body for major or patch keyword
+
+    # Incremenet the tag
+    - name: Increment tag version
+      id: increment_version
+      uses: christian-draeger/increment-semantic-version@1.0.2
+      with:
+        current-version: ${{ steps.previous_tag.outputs.tag }}
+        version-fragment: 'minor'
+
+    # TODO: Do I also need to push the incremeneted tag or will upload-release-action handle that
+    # for me?
+
+    # Upload binary to the next tags release
+    - name: Upload binary to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./faas
+        tag: ${{ steps.increment_version.outputs.next-version }}
