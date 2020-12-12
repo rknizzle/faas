@@ -41,7 +41,7 @@ jobs:
         echo $tag
         # TODO: strip the v off the front if there is one
         firstchar=`echo $tag | cut -c1-1`
-        if [ "$firstchar" -eq "v" ]; then
+        if [ "$firstchar" == "v" ]; then
           # remove the v from the front of the version
           tag="${tag:1}"
         fi
