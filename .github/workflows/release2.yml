@@ -20,9 +20,15 @@ jobs:
     # Get the previous tag version
     - name: 'Get the previous tag version'
       id: previous_tag
-      uses: WyriHaximus/github-action-get-previous-tag@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        rev=$(git rev-list --tags --max-count=1)
+        echo $rev
+        tag=$(git describe --tags $rev)
+        echo $tag
+        echo "::set-output name=tag::${tag}"
+        #uses: WyriHaximus/github-action-get-previous-tag@master
+        #env:
+        #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # Install Go
     - name: Install Go
