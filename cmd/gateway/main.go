@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/gin-gonic/gin"
-	gw "github.com/rknizzle/faas/internal/gateway/api"
+	"github.com/rknizzle/faas/internal/gateway/api"
 	"github.com/rknizzle/faas/internal/gateway/datastore"
 	"github.com/rknizzle/faas/internal/gateway/deployer"
 	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
-	"os"
+	"github.com/spf13/afero"
 )
 
 func main() {
@@ -25,11 +27,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	e := deployer.NewExtractor()
-	d := deployer.NewDeployer(cDeployer, e)
+	fs := afero.NewOsFs()
+	d := deployer.NewDeployer(cDeployer, fs)
 	lb := loadbalancer.LoadBalancer{}
 	ds := datastore.Datastore{}
 
-	gw.NewGatewayHandler(r, d, lb, ds)
+	api.NewGatewayHandler(r, d, lb, ds)
 	r.Run()
 }

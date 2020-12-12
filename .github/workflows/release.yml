@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [closed]
+
+jobs:
+  release-linux-amd64:
+    name: release linux/amd64
+    # Run when a PR is merged into master
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+
+    # Checkout code
+    - uses: actions/checkout@v2
+      with:
+        # also pull tags
+        fetch-depth: 0
+
+    # Install Go
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.15
+
+
+    # Build binary
+    - name: Build
+      run: go build -o . ./cmd/faas/...
+
+    # Get the previous tag version
+    - name: 'Get the previous tag version'
+      id: previous_version
+      run: |
+        rev=$(git rev-list --tags --max-count=1)
+        tag=$(git describe --tags $rev)
+        echo "previous tag: $tag"
+
+        firstchar=`echo $tag | cut -c1-1`
+        if [ "$firstchar" == "v" ]; then
+          # remove the v from the front of the version
+          tag="${tag:1}"
+        fi
+
+        echo "previous version: $tag"
+        echo "::set-output name=version::${tag}"
+
+    # TODO: check PR body for version increment type (major, feature, patch)
+
+    # Incremenet the tag
+    - name: Increment tag version
+      id: increment_version
+      uses: christian-draeger/increment-semantic-version@1.0.2
+      with:
+        current-version: ${{ steps.previous_version.outputs.version }}
+        version-fragment: 'feature'
+
+    # Upload binary to the next tags release
+    - name: Upload binary to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./faas
+        tag: v${{ steps.increment_version.outputs.next-version }}
+        release_name: v${{ steps.increment_version.outputs.next-version }}
+        body: "linux/amd64 binary"
