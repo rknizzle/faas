@@ -7,46 +7,46 @@ import (
 	"net/http"
 )
 
-func Invoke(function string) (map[string]string, error) {
+func Invoke(function string) (string, error) {
 	// send HTTP request to server to invoke function AKA spin
 	// up new docker container and run the code
 	client := &http.Client{}
 	r, err := http.NewRequest("POST", "http://localhost:5555/functions/"+function, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	resp, err := client.Do(r)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	// get the JSON response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var invokeErr struct {
-		message string
+		Message string `json:"message"`
 	}
 	var invokeRes struct {
-		response map[string]string
+		Response string `json:"response"`
 	}
 
 	// check status code here and unmarshal into the appropriate struct then return the correct value
 	if resp.StatusCode == 200 {
 		err = json.Unmarshal(body, &invokeRes)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return invokeRes.response, nil
+		return invokeRes.Response, nil
 	} else {
 		err = json.Unmarshal(body, &invokeErr)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return nil, errors.New(invokeErr.message)
+		return "", errors.New(invokeErr.Message)
 	}
 }
