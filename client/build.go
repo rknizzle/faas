@@ -6,12 +6,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/rknizzle/faas/internal/models"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/rknizzle/faas/internal/models"
 )
 
 func Build() (string, error) {
