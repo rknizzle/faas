@@ -52,7 +52,7 @@ func main() {
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
-		fmt.Printf("Response: %s", response)
+		fmt.Printf("Response: %s\n", response)
 	} else if subcommand == "start" {
 		// start the server
 		startGatewayAPI()
