@@ -1,7 +1,6 @@
 package loadbalancer
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/rknizzle/faas/internal/runner"
@@ -32,9 +31,6 @@ func (lb LoadBalancer) SendToRunner(image string, input string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-
-	fmt.Println("output:")
-	fmt.Println(output)
 
 	// return the results from the fn code
 	return output, nil
