@@ -149,6 +149,7 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	return err
 }
 
+// remove a specific file from a list of files
 func remove(l []string, item string) []string {
 	for i, other := range l {
 		if other == item {
