@@ -2,16 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rknizzle/faas/client"
 	"github.com/rknizzle/faas/internal/gateway/api"
 	"github.com/rknizzle/faas/internal/gateway/datastore"
 	"github.com/rknizzle/faas/internal/gateway/deployer"
 	"github.com/rknizzle/faas/internal/gateway/loadbalancer"
+	"github.com/rknizzle/faas/internal/runner"
 	"github.com/spf13/afero"
-	"log"
-	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -86,9 +88,17 @@ func startGatewayAPI() {
 		os.Exit(0)
 	}
 
+	cRunner, err := runner.NewDockerRunner(uname, password)
+	if err != nil {
+		fmt.Println("Failed to initialize docker for deployments")
+		os.Exit(0)
+	}
+
+	run := runner.Runner{CR: cRunner}
+
 	fs := afero.NewOsFs()
 	d := deployer.NewDeployer(cDeployer, fs)
-	lb := loadbalancer.LoadBalancer{}
+	lb := loadbalancer.NewLoadBalancer(run)
 	ds := datastore.Datastore{}
 
 	api.NewGatewayHandler(r, d, lb, ds)
