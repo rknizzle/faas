@@ -48,10 +48,11 @@ func main() {
 		}
 		fmt.Println("invoke name:", invokeName)
 	} else if subcommand == "invoke" {
-		err := client.Invoke(os.Args[2])
+		response, err := client.Invoke(os.Args[2])
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
+		fmt.Printf("Response: %s", response)
 	} else if subcommand == "start" {
 		// start the server
 		startGatewayAPI()
