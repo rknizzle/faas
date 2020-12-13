@@ -1,46 +1,41 @@
 package loadbalancer
 
 import (
-	"context"
-	"os"
+	"fmt"
+	"time"
 
 	"github.com/rknizzle/faas/internal/runner"
 )
 
-type LoadBalancer struct{}
+type LoadBalancer struct {
+	r runner.Runner
+}
 
-func (lb LoadBalancer) SendToRunner(image string) error {
-	// something like this on a runner machine. Will probably send an HTTP request to the machine
-	// telling it to start running the function
-	// runner.Invoke(fn)
+func NewLoadBalancer(r runner.Runner) LoadBalancer {
+	return LoadBalancer{r}
+}
 
-	// This is just a hardcoded invocation of a function in a docker container for testing out the
-	// flow
-	// TODO: this should be replaced by an HTTP request to a runner that the LB decides to run the
-	// function on
-	cRunner, err := runner.NewDockerRunner(os.Getenv("DOCKER_USERNAME"), os.Getenv("DOCKER_PASSWORD"))
+func (lb LoadBalancer) SendToRunner(image string, input string) (string, error) {
+	// start the container and return its IP address
+	ip, err := lb.r.StartFnContainer(image)
 	if err != nil {
-		return err
-	}
-	// TODO: until more features are implemented this will just be a local demo so not going to pull
-	// the image from somehwere remote. It'll only use local images
-	/*
-		err = cRunner.PullImage(image)
-		if err != nil {
-			return err
-		}
-	*/
-
-	id, err := cRunner.RunContainer(image)
-	if err != nil {
-		return err
+		return "", err
 	}
 
-	ctx := context.Background()
-	err = cRunner.LogOutputToConsole(ctx, id)
+	// TODO: probably going to need a sleep here until I figure out how to know when the container web
+	// server up and ready
+	time.Sleep(2 * time.Second)
+
+	// pass the user input and trigger the fn code by sending an HTTP request to the containers IP
+	// address
+	output, err := lb.r.SendRequestToContainer(ip, input)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	fmt.Println("output:")
+	fmt.Println(output)
+
+	// return the results from the fn code
+	return output, nil
 }
