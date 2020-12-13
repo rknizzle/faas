@@ -92,6 +92,14 @@ func Build() (string, error) {
 		return "", err
 	}
 
+	f.Close()
+
+	// remove the zip file
+	err = os.Remove(output)
+	if err != nil {
+		return "", err
+	}
+
 	// return the invocation name
 	return filepath.Base(result["invoke"]), nil
 }
