@@ -36,7 +36,7 @@ func (gw gatewayHandler) invokeHandler(c *gin.Context) {
 	// TODO: get fn input from request body
 
 	// invoke the function on a runner machine
-	_, err := gw.lb.SendToRunner(fn, "inputPlaceholder")
+	output, err := gw.lb.SendToRunner(fn, "inputPlaceholder")
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),
@@ -45,7 +45,7 @@ func (gw gatewayHandler) invokeHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"message": "OK",
+		"response": output,
 	})
 }
 
