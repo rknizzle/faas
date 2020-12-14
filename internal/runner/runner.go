@@ -3,8 +3,10 @@ package runner
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type Runner struct {
@@ -26,6 +28,29 @@ func (r Runner) StartFnContainer(image string) (string, error) {
 	}
 
 	return ip, nil
+}
+
+// TriggerContainer will tell the container to run function code once the container is running and
+// ready and gets the output of the function to return back to the caller
+func (r Runner) TriggerContainerFn(ip string, input []byte) (output string, err error) {
+	url := fmt.Sprintf("http://%s:8080/invoke", ip)
+
+	var success bool = false
+	// loop until the request to the container gets a successful response
+	// TODO: add a timeout or limit to the number of requests before returning an error
+	for success == false {
+		output, err = r.SendRequestToContainer(url, input)
+		if err == nil {
+			success = true
+		}
+
+		if success == false {
+			// do a small sleep after a container request fails
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+
+	return
 }
 
 // SendRequestToContainer sends an HTTP request to the containers IP and tells the container to
