@@ -62,7 +62,6 @@ func main() {
 				j, err = readJSONFile(os.Args[4])
 				if err != nil {
 					fmt.Printf("Failed to parse %s for JSON", os.Args[4])
-					fmt.Println(err)
 					return
 				}
 			}
@@ -99,7 +98,6 @@ func readJSONFile(filename string) ([]byte, error) {
 		return nil, err
 	}
 
-	fmt.Println(string(byteValue))
 	return byteValue, nil
 }
 
