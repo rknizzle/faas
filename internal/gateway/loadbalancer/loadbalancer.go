@@ -1,8 +1,6 @@
 package loadbalancer
 
 import (
-	"time"
-
 	"github.com/rknizzle/faas/internal/runner"
 )
 
@@ -21,13 +19,9 @@ func (lb LoadBalancer) SendToRunner(image string, input []byte) (string, error) 
 		return "", err
 	}
 
-	// TODO: probably going to need a sleep here until I figure out how to know when the container web
-	// server up and ready
-	time.Sleep(2 * time.Second)
-
 	// pass the user input and trigger the fn code by sending an HTTP request to the containers IP
 	// address
-	output, err := lb.r.SendRequestToContainer(ip, input)
+	output, err := lb.r.TriggerContainerFn(ip, input)
 	if err != nil {
 		return "", err
 	}
