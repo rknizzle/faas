@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -48,7 +49,26 @@ func main() {
 		}
 		fmt.Println("invoke name:", invokeName)
 	} else if subcommand == "invoke" {
-		response, err := client.Invoke(os.Args[2])
+		if len(os.Args) < 3 {
+			fmt.Println("Include the function name to invoke!")
+			return
+		}
+
+		var j []byte = []byte("")
+		if len(os.Args) >= 4 {
+			if os.Args[3] == "-d" {
+				// load in the json file
+				var err error
+				j, err = readJSONFile(os.Args[4])
+				if err != nil {
+					fmt.Printf("Failed to parse %s for JSON", os.Args[4])
+					fmt.Println(err)
+					return
+				}
+			}
+		}
+
+		response, err := client.Invoke(os.Args[2], j)
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
@@ -63,6 +83,24 @@ func main() {
 	} else {
 		helpInfo()
 	}
+}
+
+func readJSONFile(filename string) ([]byte, error) {
+	// Open our jsonFile
+	jsonFile, err := os.Open(filename)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		return nil, err
+	}
+
+	defer jsonFile.Close()
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(string(byteValue))
+	return byteValue, nil
 }
 
 func helpInfo() {
