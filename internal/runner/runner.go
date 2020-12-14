@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -26,10 +27,10 @@ func (r Runner) StartFnContainer(image string) (string, error) {
 	return ip, nil
 }
 
-func (r Runner) SendRequestToContainer(ip string, input string) (string, error) {
+func (r Runner) SendRequestToContainer(ip string, input []byte) (string, error) {
 	url := fmt.Sprintf("http://%s:8080/invoke", ip)
 
-	resp, err := http.Post(url, "application/json", nil)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(input))
 	if err != nil {
 		return "", err
 	}
