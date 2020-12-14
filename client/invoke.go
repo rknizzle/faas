@@ -1,20 +1,22 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
 )
 
-func Invoke(function string) (string, error) {
+func Invoke(function string, input []byte) (string, error) {
 	// send HTTP request to server to invoke function AKA spin
 	// up new docker container and run the code
 	client := &http.Client{}
-	r, err := http.NewRequest("POST", "http://localhost:5555/functions/"+function, nil)
+	r, err := http.NewRequest("POST", "http://localhost:5555/functions/"+function, bytes.NewBuffer(input))
 	if err != nil {
 		return "", err
 	}
+	r.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(r)
 	if err != nil {
