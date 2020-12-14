@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rknizzle/faas/internal/gateway/datastore"
@@ -33,10 +34,17 @@ func ping(c *gin.Context) {
 func (gw gatewayHandler) invokeHandler(c *gin.Context) {
 	// get the function name from the path param
 	fn := c.Param("fn")
-	// TODO: get fn input from request body
+	// get input data to the function
+	inputData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
 
 	// invoke the function on a runner machine
-	output, err := gw.lb.SendToRunner(fn, "inputPlaceholder")
+	output, err := gw.lb.SendToRunner(fn, inputData)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),

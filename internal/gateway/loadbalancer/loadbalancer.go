@@ -14,7 +14,7 @@ func NewLoadBalancer(r runner.Runner) LoadBalancer {
 	return LoadBalancer{r}
 }
 
-func (lb LoadBalancer) SendToRunner(image string, input string) (string, error) {
+func (lb LoadBalancer) SendToRunner(image string, input []byte) (string, error) {
 	// start the container and return its IP address
 	ip, err := lb.r.StartFnContainer(image)
 	if err != nil {
