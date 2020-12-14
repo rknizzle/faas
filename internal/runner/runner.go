@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -17,8 +18,19 @@ type ContainerRunner interface {
 	ContainerIP(context.Context, string) (string, error)
 }
 
+// Runner handles starting up the function code in a container, sending an HTTP request to invoke
+// the function, and returning the response of the function back to the caller
 type Runner struct {
-	CR ContainerRunner
+	CR     ContainerRunner
+	Client HTTPPoster
+}
+
+type HTTPPoster interface {
+	Post(string, string, io.Reader) (*http.Response, error)
+}
+
+func NewRunner(cr ContainerRunner) Runner {
+	return Runner{CR: cr, Client: &http.Client{}}
 }
 
 // StartFnContainer starts a container containing the function code and returns the IP address of
@@ -64,7 +76,7 @@ func (r Runner) TriggerContainerFn(ip string, input []byte) (output string, err 
 // SendRequestToContainer sends an HTTP request to the containers IP and tells the container to
 // start running the function code
 func (r Runner) SendRequestToContainer(url string, input []byte) (string, error) {
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(input))
+	resp, err := r.Client.Post(url, "application/json", bytes.NewBuffer(input))
 	if err != nil {
 		return "", err
 	}
