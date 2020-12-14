@@ -12,6 +12,8 @@ type Runner struct {
 	CR ContainerRunner
 }
 
+// StartFnContainer starts a container containing the function code and returns the IP address of
+// the container so that the function can be invoked via HTTP request
 func (r Runner) StartFnContainer(image string) (string, error) {
 	id, err := r.CR.RunContainer(image)
 	if err != nil {
