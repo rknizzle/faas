@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// ContainerRunner contains all the methods required to handle a function invocation by pulling down
-// a function container image from a remote registry and running the function code in the container
+// ContainerRunner handles getting the function code, starting it in a container and getting the IP
+// address of the container to interact with it
 type ContainerRunner interface {
 	PullImage(string) error
 	RunContainer(string) (string, error)
