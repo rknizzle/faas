@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -131,7 +132,7 @@ func startGatewayAPI() {
 		os.Exit(0)
 	}
 
-	run := runner.Runner{CR: cRunner}
+	run := runner.NewRunner(cRunner, &http.Client{})
 
 	fs := afero.NewOsFs()
 	d := deployer.NewDeployer(cDeployer, fs)
