@@ -75,4 +75,36 @@ func TestTriggerContainerFn(t *testing.T) {
 			t.Fatalf("err %s", err)
 		}
 	})
+
+	t.Run("Function returns successfully when HTTP req requires multiple attempts", func(t *testing.T) {
+
+		input := []byte("input")
+		// first 2 attempts return an error
+		mockHTTPPoster.On(
+			"Post",
+			mock.Anything,
+			"application/json",
+			mock.Anything,
+		).Return(
+			nil,
+			errors.New("test error"),
+		).Twice()
+
+		// 3rd attempt return successfully
+		mockHTTPPoster.On(
+			"Post",
+			mock.Anything,
+			"application/json",
+			mock.Anything,
+		).Return(
+			&http.Response{Body: ioutil.NopCloser(strings.NewReader("test"))},
+			nil,
+		).Once()
+
+		r := NewRunner(DockerRunner{}, mockHTTPPoster)
+		_, err := r.TriggerContainerFn("1.1.1.1", input)
+		if err != nil {
+			t.Fatalf("err %s", err)
+		}
+	})
 }
