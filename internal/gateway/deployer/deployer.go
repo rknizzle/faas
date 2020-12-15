@@ -48,9 +48,6 @@ func (d Deployer) Deploy(data models.FnData) error {
 	}
 	// d.c.PushImage()
 
-	// remove temporary directory used to build the image
-	d.fs.RemoveAll(dir)
-
 	return nil
 }
 
