@@ -34,13 +34,21 @@ const app = express()
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
 
+// load in the function code
+const fn = require('./index.js')
+
 app.post('/invoke', (req, res) => {
-	res.json({my: 'response', hello: 'world!'})
-	app.close()
+  function cb(output) {
+    res.json(output)
+    // exit the container after finishing running the function
+    server.close()
+  }
+
+  fn(req.body, cb)
 })
 
 const port = 8080
-app.listen(port, () => {})`
+const server = app.listen(port, () => {})`
 
 	err := ioutil.WriteFile("server.js", []byte(serverContents), 0755)
 	if err != nil {
@@ -51,9 +59,12 @@ app.listen(port, () => {})`
 }
 
 func writeIndexFile() error {
-	indexContents := `if (require.main === module) {
-  console.log('HELLO WORLD!')
-}`
+	indexContents := `// Put the function logic below.
+// context contains the input data and use the callback to return a result to the caller
+module.exports = (context, cb) => {
+  return cb({hello: "world"})
+}
+`
 
 	err := ioutil.WriteFile("index.js", []byte(indexContents), 0755)
 	if err != nil {
