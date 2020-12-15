@@ -53,3 +53,26 @@ func TestSendRequestToContainer(t *testing.T) {
 		}
 	})
 }
+
+func TestTriggerContainerFn(t *testing.T) {
+	mockHTTPPoster := new(mocks.HTTPPoster)
+	t.Run("Function returns successfully when HTTP req returns successfully on the first try", func(t *testing.T) {
+
+		input := []byte("input")
+		mockHTTPPoster.On(
+			"Post",
+			mock.Anything,
+			"application/json",
+			mock.Anything,
+		).Return(
+			&http.Response{Body: ioutil.NopCloser(strings.NewReader("test"))},
+			nil,
+		).Once()
+
+		r := NewRunner(DockerRunner{}, mockHTTPPoster)
+		_, err := r.TriggerContainerFn("1.1.1.1", input)
+		if err != nil {
+			t.Fatalf("err %s", err)
+		}
+	})
+}
