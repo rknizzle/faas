@@ -35,7 +35,6 @@ const bodyParser = require('body-parser')
 app.use(bodyParser.json())
 
 app.post('/invoke', (req, res) => {
-	console.log('INVOKE TESTING 123')
 	res.json({my: 'response', hello: 'world!'})
 	app.close()
 })
