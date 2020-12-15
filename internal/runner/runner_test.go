@@ -108,3 +108,42 @@ func TestTriggerContainerFn(t *testing.T) {
 		}
 	})
 }
+
+func TestStartFnContainer(t *testing.T) {
+	// mock out the ContainerRunner
+	mockContainerRunner := new(mocks.ContainerRunner)
+	mockHTTPPoster := new(mocks.HTTPPoster)
+
+	t.Run("Returns the ip address of the container", func(t *testing.T) {
+
+		imageName := "imageName"
+		id := "xxx"
+		ip := "1.1.1.1"
+		mockContainerRunner.On(
+			"RunContainer",
+			imageName,
+		).Return(
+			id,
+			nil,
+		).Once()
+
+		mockContainerRunner.On(
+			"ContainerIP",
+			mock.Anything,
+			id,
+		).Return(
+			ip,
+			nil,
+		).Once()
+
+		r := NewRunner(mockContainerRunner, mockHTTPPoster)
+		got, err := r.StartFnContainer(imageName)
+		if err != nil {
+			t.Fatalf("err %s", err)
+		}
+
+		if got != ip {
+			t.Fatalf("Expected %s, got %s", ip, got)
+		}
+	})
+}
