@@ -29,8 +29,8 @@ type HTTPPoster interface {
 	Post(string, string, io.Reader) (*http.Response, error)
 }
 
-func NewRunner(cr ContainerRunner) Runner {
-	return Runner{CR: cr, Client: &http.Client{}}
+func NewRunner(cr ContainerRunner, c HTTPPoster) Runner {
+	return Runner{CR: cr, Client: c}
 }
 
 // StartFnContainer starts a container containing the function code and returns the IP address of
