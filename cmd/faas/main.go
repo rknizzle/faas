@@ -112,8 +112,11 @@ func helpInfo() {
 }
 
 func startGatewayAPI() {
-	uname := os.Getenv("DOCKER_USERNAME")
-	password := os.Getenv("DOCKER_PASSWORD")
+	// uname := os.Getenv("DOCKER_USERNAME")
+	// password := os.Getenv("DOCKER_PASSWORD")
+	uname := "not-used-yet -- TODO"
+	password := "not-used-yet -- TODO"
+
 	if len(uname) == 0 || len(password) == 0 {
 		fmt.Println("Missing Docker username or password")
 		os.Exit(0)
