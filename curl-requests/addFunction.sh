@@ -1,4 +1,4 @@
-url="localhost:${PORT:-8080}/functions"
+url="localhost:5555/functions"
 
 curl -s -X POST \
   -H "content-type: application/json" \
