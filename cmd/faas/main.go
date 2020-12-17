@@ -56,7 +56,7 @@ func main() {
 		}
 
 		var j []byte = []byte("")
-		if len(os.Args) >= 4 {
+		if len(os.Args) >= 5 {
 			if os.Args[3] == "-d" {
 				// load in the json file
 				var err error
