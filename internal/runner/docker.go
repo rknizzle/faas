@@ -81,7 +81,7 @@ func (d DockerRunner) PullImage(name string) error {
 }
 
 // RunContainer creates and starts a container from a local image
-func (d *DockerRunner) RunContainer(image string) (string, error) {
+func (d DockerRunner) RunContainer(image string) (string, error) {
 	ctx := context.Background()
 
 	resp, err := d.cli.ContainerCreate(ctx, &container.Config{

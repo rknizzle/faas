@@ -1,10 +1,12 @@
 package runner
 
 import (
+	"context"
 	"io/ioutil"
 	"strings"
 	"testing"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/rknizzle/faas/internal/runner/mocks"
 	"github.com/stretchr/testify/mock"
@@ -38,6 +40,24 @@ func TestPullImage(t *testing.T) {
 		err := dr.PullImage("name")
 		if err != nil {
 			t.Fatalf("err %s", err)
+		}
+	})
+}
+
+func TestContainerIP(t *testing.T) {
+	mockDockerClient := new(mocks.DockerClient)
+	t.Run("success", func(t *testing.T) {
+		mockDockerClient.On("ContainerInspect", mock.Anything, "xxx").Return(types.ContainerJSON{NetworkSettings: &types.NetworkSettings{DefaultNetworkSettings: types.DefaultNetworkSettings{IPAddress: "1.1.1.1"}}}, nil).Once()
+
+		dr := DockerRunner{mockDockerClient, "xxx"}
+
+		ctx := context.Background()
+		ip, err := dr.ContainerIP(ctx, "xxx")
+		if err != nil {
+			t.Fatalf("err %s", err)
+		}
+		if ip != "1.1.1.1" {
+			t.Fatalf("Returned incorrect IP. Expected 1.1.1.1, got %s", ip)
 		}
 	})
 }

@@ -5,7 +5,11 @@ import (
 )
 
 func Init() error {
-	err := writeIndexFile()
+	err := writeServerFile()
+	if err != nil {
+		return err
+	}
+	err = writeIndexFile()
 	if err != nil {
 		return err
 	}
@@ -24,10 +28,43 @@ func Init() error {
 	return nil
 }
 
+func writeServerFile() error {
+	serverContents := `const express = require('express')
+const app = express()
+const bodyParser = require('body-parser')
+app.use(bodyParser.json())
+
+// load in the function code
+const fn = require('./index.js')
+
+app.post('/invoke', (req, res) => {
+  function cb(output) {
+    res.json(output)
+    // exit the container after finishing running the function
+    server.close()
+  }
+
+  fn(req.body, cb)
+})
+
+const port = 8080
+const server = app.listen(port, () => {})`
+
+	err := ioutil.WriteFile("server.js", []byte(serverContents), 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func writeIndexFile() error {
-	indexContents := `if (require.main === module) {
-  console.log('HELLO WORLD!')
-}`
+	indexContents := `// Put the function logic below.
+// context contains the input data and use the callback to return a result to the caller
+module.exports = (context, cb) => {
+  return cb({hello: "world"})
+}
+`
 
 	err := ioutil.WriteFile("index.js", []byte(indexContents), 0755)
 	if err != nil {
@@ -48,7 +85,11 @@ func writePackageFile() error {
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1"
+  }
 }`
 
 	err := ioutil.WriteFile("package.json", []byte(packageContents), 0755)
@@ -72,7 +113,8 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-CMD [ "node", "index.js" ]`
+EXPOSE 8080
+CMD [ "node", "server.js" ]`
 
 	err := ioutil.WriteFile("Dockerfile", []byte(dockerfileContents), 0755)
 	if err != nil {
