@@ -6,12 +6,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/rknizzle/faas/internal/models"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/rknizzle/faas/internal/models"
 )
 
 func Build() (string, error) {
@@ -91,6 +92,14 @@ func Build() (string, error) {
 		return "", err
 	}
 
+	f.Close()
+
+	// remove the zip file
+	err = os.Remove(output)
+	if err != nil {
+		return "", err
+	}
+
 	// return the invocation name
 	return filepath.Base(result["invoke"]), nil
 }
@@ -148,6 +157,7 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	return err
 }
 
+// remove a specific file from a list of files
 func remove(l []string, item string) []string {
 	for i, other := range l {
 		if other == item {
