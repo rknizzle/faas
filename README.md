@@ -12,7 +12,6 @@
   - [Invoke Function](#invoke-function)
 - [Roadmap](#roadmap)
 
-
 # Dependencies
 - Only works in Linux and tested on Ubuntu
 - Must have Docker daemon installed and running 
@@ -41,6 +40,7 @@ faas invoke examplefn
 Output: `Response: {"hello":"world"}`
 
 # Example
+#### NOTE: Only javascript is currently supported for writing functions
 If you are running locally start the faas server first: `faas start`  
 Next, create a new working directory for your function. cd into it and then run faas init.  
 After running faas init, open index.js in your code editor to modify your function.  
