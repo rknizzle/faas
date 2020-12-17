@@ -143,5 +143,5 @@ func startGatewayAPI() {
 	ds := datastore.Datastore{}
 
 	api.NewGatewayHandler(r, d, lb, ds)
-	r.Run()
+	r.Run(":5555")
 }
