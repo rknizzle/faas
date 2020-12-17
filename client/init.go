@@ -60,7 +60,7 @@ const server = app.listen(port, () => {})`
 
 func writeIndexFile() error {
 	indexContents := `// Put the function logic below.
-// context contains the input data and use the callback to return a result to the caller
+// context contains the input data and the callback returns a result to the caller
 module.exports = (context, cb) => {
   return cb({hello: "world"})
 }
