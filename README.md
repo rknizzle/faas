@@ -47,8 +47,7 @@ After running faas init, open index.js in your code editor to modify your functi
 
 Here is an example function that takes in an array of numbers are returns the sum:  
 ```js
-// Put the function logic below.
-// context contains the input data and the callback returns a result to the caller
+// takes an array of numbers and returns the sum
 module.exports = (context, cb) => {
   let sum
   for (let num of context.numbers) {
