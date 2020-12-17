@@ -108,7 +108,7 @@ func helpInfo() {
 	fmt.Println("  start (Starts the faas server")
 	fmt.Println("  init (only nodejs functions currently supported)")
 	fmt.Println("  build")
-	fmt.Println("  invoke <function>")
+	fmt.Println("  invoke <function> [-d <filename.json>]")
 }
 
 func startGatewayAPI() {
