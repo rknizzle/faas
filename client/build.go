@@ -159,6 +159,9 @@ func ZipFiles(filename string, files []string) error {
 			return err
 		}
 	}
+
+	addInMemoryFileToZip(zipWriter, "server.js", []byte(serverFile))
+	addInMemoryFileToZip(zipWriter, "Dockerfile", []byte(dockerFile))
 	return nil
 }
 
