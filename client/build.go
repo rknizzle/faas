@@ -15,6 +15,45 @@ import (
 	"github.com/rknizzle/faas/internal/models"
 )
 
+const (
+	serverFile = `const express = require('express')
+const app = express()
+const bodyParser = require('body-parser')
+app.use(bodyParser.json())
+
+// load in the function code
+const fn = require('./index.js')
+
+app.post('/invoke', (req, res) => {
+  function cb(output) {
+    res.json(output)
+    // exit the container after finishing running the function
+    server.close()
+  }
+
+  fn(req.body, cb)
+})
+
+const port = 8080
+const server = app.listen(port, () => {})`
+
+	dockerFile = `FROM node:12
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# Install app dependencies
+COPY package*.json ./
+
+RUN npm install
+
+# Bundle app source
+COPY . .
+
+EXPOSE 8080
+CMD [ "node", "server.js" ]`
+)
+
 func Build() (string, error) {
 	path, err := os.Getwd()
 	if err != nil {
