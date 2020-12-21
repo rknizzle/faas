@@ -2,7 +2,6 @@ package client
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -74,31 +73,17 @@ func Build() (string, error) {
 	// remove node_modules if it exists from list of files to send to server
 	fileList = remove(fileList, "node_modules")
 
-	// get the name of the current directory
-	name := filepath.Base(path)
-	output := name + ".zip"
-
 	// Combine all files into a zip
-	err = ZipFiles(output, fileList)
-	if err != nil {
-		return "", err
-	}
-
-	// Open new zip file
-	f, err := os.Open(output)
-	if err != nil {
-		return "", err
-	}
-
-	// Read entire zip file into byte slice
-	reader := bufio.NewReader(f)
-	content, err := ioutil.ReadAll(reader)
+	content, err := ZipFiles(fileList)
 	if err != nil {
 		return "", err
 	}
 
 	// Encode zip as base64.
 	encoded := base64.StdEncoding.EncodeToString(content)
+
+	// get the name of the current directory
+	name := filepath.Base(path)
 
 	// format the function data to send to the server
 	fd := &models.FnData{File: encoded, Name: name}
@@ -127,14 +112,6 @@ func Build() (string, error) {
 		return "", err
 	}
 	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return "", err
-	}
-
-	f.Close()
-
-	// remove the zip file
-	err = os.Remove(output)
 	if err != nil {
 		return "", err
 	}
