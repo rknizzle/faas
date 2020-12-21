@@ -143,26 +143,21 @@ func Build() (string, error) {
 	return filepath.Base(result["invoke"]), nil
 }
 
-func ZipFiles(filename string, files []string) error {
-	newZipFile, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer newZipFile.Close()
-
-	zipWriter := zip.NewWriter(newZipFile)
+func ZipFiles(files []string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
 	defer zipWriter.Close()
 
 	// Add files to zip
 	for _, file := range files {
-		if err = AddFileToZip(zipWriter, file); err != nil {
-			return err
+		if err := AddFileToZip(zipWriter, file); err != nil {
+			return nil, err
 		}
 	}
 
 	addInMemoryFileToZip(zipWriter, "server.js", []byte(serverFile))
 	addInMemoryFileToZip(zipWriter, "Dockerfile", []byte(dockerFile))
-	return nil
+	return buf.Bytes(), nil
 }
 
 func AddFileToZip(zipWriter *zip.Writer, filename string) error {
