@@ -157,6 +157,20 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	return err
 }
 
+// add a file to the zip without the file having to exist on disk. Pass in the contents of the file
+// as a []byte and the name to use as the filename
+func addInMemoryFileToZip(zipWriter *zip.Writer, filename string, content []byte) error {
+	zipFile, err := zipWriter.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = zipFile.Write(content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // remove a specific file from a list of files
 func remove(l []string, item string) []string {
 	for i, other := range l {
