@@ -1,7 +1,7 @@
 package client
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rknizzle/faas/internal/models"
 )
@@ -59,27 +60,13 @@ func Build() (string, error) {
 		return "", err
 	}
 
-	// Get all files in directory
-	var fileList []string
-	files, err := ioutil.ReadDir(path)
+	// make the current directory into a tar file buffer
+	content, err := Tar(path)
 	if err != nil {
 		return "", err
 	}
 
-	for _, f := range files {
-		fileList = append(fileList, f.Name())
-	}
-
-	// remove node_modules if it exists from list of files to send to server
-	fileList = remove(fileList, "node_modules")
-
-	// Combine all files into a zip
-	content, err := ZipFiles(fileList)
-	if err != nil {
-		return "", err
-	}
-
-	// Encode zip as base64.
+	// Encode tar as base64.
 	encoded := base64.StdEncoding.EncodeToString(content)
 
 	// get the name of the current directory
@@ -120,77 +107,98 @@ func Build() (string, error) {
 	return filepath.Base(result["invoke"]), nil
 }
 
-func ZipFiles(files []string) ([]byte, error) {
+// Tar takes a source and variable writers and walks 'source' writing each file
+// found to the tar writer; the purpose for accepting multiple writers is to allow
+// for multiple outputs (for example a file, or md5 hash)
+func Tar(src string) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	zipWriter := zip.NewWriter(buf)
-	defer zipWriter.Close()
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
 
-	// Add files to zip
-	for _, file := range files {
-		if err := AddFileToZip(zipWriter, file); err != nil {
-			return nil, err
+	// walk path
+	filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
+
+		// return on any error
+		if err != nil {
+			return err
 		}
+
+		// return on non-regular files
+		if !fi.Mode().IsRegular() {
+			return nil
+		}
+
+		// create a new dir/file header
+		header, err := tar.FileInfoHeader(fi, fi.Name())
+		if err != nil {
+			return err
+		}
+
+		// update the name to correctly reflect the desired destination when untaring
+		header.Name = strings.TrimPrefix(strings.Replace(file, src, "", -1), string(filepath.Separator))
+
+		// write the header
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// open files for taring
+		f, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+
+		// copy file data into tar writer
+		if _, err := io.Copy(tw, f); err != nil {
+			return err
+		}
+
+		// manually close here after each file operation; defering would cause each file close
+		// to wait until all operations have completed.
+		f.Close()
+
+		return nil
+	})
+
+	// TODO: these files required for building should be added on the backend instead. That way the
+	// unaltered tar containing the function code can be uploaded to storage before adding the extra
+	// files required for building.
+	// For now just place the extra required files for building the nodejs image here and pass it
+	// right into the Docker ImageBuild call.
+
+	// place the server.js file for handling the HTTP request from the runner into the tar
+	err := addInMemoryFileToTar(tw, "server.js", serverFile)
+	if err != nil {
+		return nil, err
 	}
 
-	addInMemoryFileToZip(zipWriter, "server.js", []byte(serverFile))
-	addInMemoryFileToZip(zipWriter, "Dockerfile", []byte(dockerFile))
+	// place the Dockerfile for building the image into the tar
+	err = addInMemoryFileToTar(tw, "Dockerfile", dockerFile)
+	if err != nil {
+		return nil, err
+	}
+
 	return buf.Bytes(), nil
 }
 
-func AddFileToZip(zipWriter *zip.Writer, filename string) error {
-	fileToZip, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer fileToZip.Close()
-
-	// Get the file information
-	info, err := fileToZip.Stat()
-	if err != nil {
-		return err
+// addInMemoryFileToTar adds a file to a tar without the file having to exist on disk. Just pass in
+// a filenae and the file contents
+func addInMemoryFileToTar(tw *tar.Writer, filename string, fileContents string) error {
+	hdr := &tar.Header{
+		Name: filename,
+		Mode: 0600,
+		Size: int64(len(fileContents)),
 	}
 
-	header, err := zip.FileInfoHeader(info)
+	err := tw.WriteHeader(hdr)
 	if err != nil {
 		return err
 	}
 
-	// Using FileInfoHeader() above only uses the basename of the file. If we want
-	// to preserve the folder structure we can overwrite this with the full path.
-	header.Name = filename
-
-	// Change to deflate to gain better compression
-	// see http://golang.org/pkg/archive/zip/#pkg-constants
-	header.Method = zip.Deflate
-
-	writer, err := zipWriter.CreateHeader(header)
+	_, err = tw.Write([]byte(fileContents))
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(writer, fileToZip)
-	return err
-}
 
-// add a file to the zip without the file having to exist on disk. Pass in the contents of the file
-// as a []byte and the name to use as the filename
-func addInMemoryFileToZip(zipWriter *zip.Writer, filename string, content []byte) error {
-	zipFile, err := zipWriter.Create(filename)
-	if err != nil {
-		return err
-	}
-	_, err = zipFile.Write(content)
-	if err != nil {
-		return err
-	}
 	return nil
-}
-
-// remove a specific file from a list of files
-func remove(l []string, item string) []string {
-	for i, other := range l {
-		if other == item {
-			return append(l[:i], l[i+1:]...)
-		}
-	}
-	return l
 }
