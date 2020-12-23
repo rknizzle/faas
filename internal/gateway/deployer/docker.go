@@ -11,7 +11,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
 )
 
 type DockerClient interface {
@@ -60,15 +59,9 @@ func generateRegistryAuth(username string, password string) (string, error) {
 }
 
 // BuildImage converts a directory to a tar file and uses the Docker SDK to build a Docker image
-func (d DockerDeployer) BuildImage(directory string, tag string) error {
+func (d DockerDeployer) BuildImage(dockerfileTarReader io.Reader, tag string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300)*time.Second)
 	defer cancel()
-
-	// Get a tar file from directory
-	dockerfileTarReader, err := archive.TarWithOptions(directory, &archive.TarOptions{})
-	if err != nil {
-		return err
-	}
 
 	resp, err := d.cli.ImageBuild(
 		ctx,
