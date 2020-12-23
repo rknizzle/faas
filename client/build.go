@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -92,19 +93,36 @@ func Build() (string, error) {
 	}
 	defer resp.Body.Close()
 
+	var buildErr struct {
+		Message string `json:"message"`
+	}
+
+	var buildRes struct {
+		Invoke string `json:"invoke"`
+	}
+
 	// get the JSON response
-	var result map[string]string
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return "", err
-	}
 
-	// return the invocation name
-	return filepath.Base(result["invoke"]), nil
+	// check status code here and unmarshal into the appropriate struct then return the correct value
+	if resp.StatusCode == 200 {
+		err = json.Unmarshal(body, &buildRes)
+		if err != nil {
+			return "", err
+		}
+
+		// return the invocation name
+		return filepath.Base(buildRes.Invoke), nil
+	} else {
+		err = json.Unmarshal(body, &buildErr)
+		if err != nil {
+			return "", err
+		}
+		return "", errors.New(buildErr.Message)
+	}
 }
 
 // Tar takes a source and variable writers and walks 'source' writing each file

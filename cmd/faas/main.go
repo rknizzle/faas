@@ -41,12 +41,13 @@ func main() {
 	} else if subcommand == "build" {
 		// verify that there is a fn.yaml file
 		if _, err := os.Stat("fn.yaml"); os.IsNotExist(err) {
-			fmt.Println("Not a proper directory. Run faas init to start a new function.")
+			fmt.Println("Error: Not a proper directory. Run faas init to start a new function.")
 			return
 		}
 		invokeName, err := client.Build()
 		if err != nil {
-			log.Fatalf(err.Error())
+			fmt.Printf("Error: %s\n", err.Error())
+			return
 		}
 		fmt.Println("invoke name:", invokeName)
 	} else if subcommand == "invoke" {
