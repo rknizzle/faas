@@ -55,7 +55,7 @@ func TestTestBuildImage(t *testing.T) {
 		).Once()
 
 		dd := DockerDeployer{mockDockerClient, "xxx"}
-		err := dd.BuildImage("name", "tag")
+		err := dd.BuildImage(strings.NewReader("test"), "tag")
 		if err != nil {
 			t.Fatalf("err %s", err)
 		}
@@ -73,7 +73,7 @@ func TestTestBuildImage(t *testing.T) {
 		).Once()
 
 		dd := DockerDeployer{mockDockerClient, "xxx"}
-		err := dd.BuildImage("name", "tag")
+		err := dd.BuildImage(strings.NewReader("test"), "tag")
 		if err == nil {
 			t.Fatalf("Expected ImageBuild to return an error")
 		}

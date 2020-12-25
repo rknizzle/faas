@@ -1,18 +1,58 @@
 package client
 
 import (
-	"archive/zip"
-	"bufio"
+	"archive/tar"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rknizzle/faas/internal/models"
+)
+
+const (
+	serverFile = `const express = require('express')
+const app = express()
+const bodyParser = require('body-parser')
+app.use(bodyParser.json())
+
+// load in the function code
+const fn = require('./index.js')
+
+app.post('/invoke', (req, res) => {
+  function cb(output) {
+    res.json(output)
+    // exit the container after finishing running the function
+    server.close()
+  }
+
+  fn(req.body, cb)
+})
+
+const port = 8080
+const server = app.listen(port, () => {})`
+
+	dockerFile = `FROM node:12
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# Install app dependencies
+COPY package*.json ./
+
+RUN npm install
+
+# Bundle app source
+COPY . .
+
+EXPOSE 8080
+CMD [ "node", "server.js" ]`
 )
 
 func Build() (string, error) {
@@ -21,45 +61,17 @@ func Build() (string, error) {
 		return "", err
 	}
 
-	// Get all files in directory
-	var fileList []string
-	files, err := ioutil.ReadDir(path)
+	// make the current directory into a tar file buffer
+	content, err := Tar(path)
 	if err != nil {
 		return "", err
 	}
 
-	for _, f := range files {
-		fileList = append(fileList, f.Name())
-	}
-
-	// remove node_modules if it exists from list of files to send to server
-	fileList = remove(fileList, "node_modules")
+	// Encode tar as base64.
+	encoded := base64.StdEncoding.EncodeToString(content)
 
 	// get the name of the current directory
 	name := filepath.Base(path)
-	output := name + ".zip"
-
-	// Combine all files into a zip
-	err = ZipFiles(output, fileList)
-	if err != nil {
-		return "", err
-	}
-
-	// Open new zip file
-	f, err := os.Open(output)
-	if err != nil {
-		return "", err
-	}
-
-	// Read entire zip file into byte slice
-	reader := bufio.NewReader(f)
-	content, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return "", err
-	}
-
-	// Encode zip as base64.
-	encoded := base64.StdEncoding.EncodeToString(content)
 
 	// format the function data to send to the server
 	fd := &models.FnData{File: encoded, Name: name}
@@ -81,88 +93,130 @@ func Build() (string, error) {
 	}
 	defer resp.Body.Close()
 
+	var buildErr struct {
+		Message string `json:"message"`
+	}
+
+	var buildRes struct {
+		Invoke string `json:"invoke"`
+	}
+
 	// get the JSON response
-	var result map[string]string
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return "", err
+
+	// check status code here and unmarshal into the appropriate struct then return the correct value
+	if resp.StatusCode == 200 {
+		err = json.Unmarshal(body, &buildRes)
+		if err != nil {
+			return "", err
+		}
+
+		// return the invocation name
+		return filepath.Base(buildRes.Invoke), nil
+	} else {
+		err = json.Unmarshal(body, &buildErr)
+		if err != nil {
+			return "", err
+		}
+		return "", errors.New(buildErr.Message)
 	}
-
-	f.Close()
-
-	// remove the zip file
-	err = os.Remove(output)
-	if err != nil {
-		return "", err
-	}
-
-	// return the invocation name
-	return filepath.Base(result["invoke"]), nil
 }
 
-func ZipFiles(filename string, files []string) error {
-	newZipFile, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer newZipFile.Close()
+// Tar takes a source and variable writers and walks 'source' writing each file
+// found to the tar writer; the purpose for accepting multiple writers is to allow
+// for multiple outputs (for example a file, or md5 hash)
+func Tar(src string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
 
-	zipWriter := zip.NewWriter(newZipFile)
-	defer zipWriter.Close()
+	// walk path
+	filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
 
-	// Add files to zip
-	for _, file := range files {
-		if err = AddFileToZip(zipWriter, file); err != nil {
+		// return on any error
+		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
 
-func AddFileToZip(zipWriter *zip.Writer, filename string) error {
-	fileToZip, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer fileToZip.Close()
-
-	// Get the file information
-	info, err := fileToZip.Stat()
-	if err != nil {
-		return err
-	}
-
-	header, err := zip.FileInfoHeader(info)
-	if err != nil {
-		return err
-	}
-
-	// Using FileInfoHeader() above only uses the basename of the file. If we want
-	// to preserve the folder structure we can overwrite this with the full path.
-	header.Name = filename
-
-	// Change to deflate to gain better compression
-	// see http://golang.org/pkg/archive/zip/#pkg-constants
-	header.Method = zip.Deflate
-
-	writer, err := zipWriter.CreateHeader(header)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(writer, fileToZip)
-	return err
-}
-
-// remove a specific file from a list of files
-func remove(l []string, item string) []string {
-	for i, other := range l {
-		if other == item {
-			return append(l[:i], l[i+1:]...)
+		// return on non-regular files
+		if !fi.Mode().IsRegular() {
+			return nil
 		}
+
+		// create a new dir/file header
+		header, err := tar.FileInfoHeader(fi, fi.Name())
+		if err != nil {
+			return err
+		}
+
+		// update the name to correctly reflect the desired destination when untaring
+		header.Name = strings.TrimPrefix(strings.Replace(file, src, "", -1), string(filepath.Separator))
+
+		// write the header
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// open files for taring
+		f, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+
+		// copy file data into tar writer
+		if _, err := io.Copy(tw, f); err != nil {
+			return err
+		}
+
+		// manually close here after each file operation; defering would cause each file close
+		// to wait until all operations have completed.
+		f.Close()
+
+		return nil
+	})
+
+	// TODO: these files required for building should be added on the backend instead. That way the
+	// unaltered tar containing the function code can be uploaded to storage before adding the extra
+	// files required for building.
+	// For now just place the extra required files for building the nodejs image here and pass it
+	// right into the Docker ImageBuild call.
+
+	// place the server.js file for handling the HTTP request from the runner into the tar
+	err := addInMemoryFileToTar(tw, "server.js", serverFile)
+	if err != nil {
+		return nil, err
 	}
-	return l
+
+	// place the Dockerfile for building the image into the tar
+	err = addInMemoryFileToTar(tw, "Dockerfile", dockerFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// addInMemoryFileToTar adds a file to a tar without the file having to exist on disk. Just pass in
+// a filenae and the file contents
+func addInMemoryFileToTar(tw *tar.Writer, filename string, fileContents string) error {
+	hdr := &tar.Header{
+		Name: filename,
+		Mode: 0600,
+		Size: int64(len(fileContents)),
+	}
+
+	err := tw.WriteHeader(hdr)
+	if err != nil {
+		return err
+	}
+
+	_, err = tw.Write([]byte(fileContents))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
